@@ -1,0 +1,270 @@
+import { useState, useEffect } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../../../lib/supabase'
+import { formatTime, formatDayLong } from '../../../lib/utils'
+import { useAuth } from '../../../hooks/useAuth'
+import { useBono } from '../../../hooks/useBono'
+
+const SPORT_COLORS = {
+  crossfit: '#0abfbf',
+  hyrox: '#e8a020',
+}
+
+const BOOK_ERRORS = {
+  user_inactive:     'Tu cuenta está desactivada. Contacta con el gimnasio.',
+  class_not_found:   'Esta clase no está disponible.',
+  too_late_to_book:  'Solo puedes reservar con más de 1 hora de antelación.',
+  sport_not_assigned:'No tienes este deporte asignado.',
+  class_full:        'Esta clase está completa.',
+  already_booked:    'Ya tienes esta clase reservada.',
+  no_bono:           'No tienes bono activo para este mes.',
+  bono_exhausted:    'Has agotado las clases de tu bono este mes.',
+}
+
+const CANCEL_ERRORS = {
+  reservation_not_found:     'Reserva no encontrada.',
+  cancellation_window_closed:'No puedes cancelar una clase que ya ha comenzado hace más de 10 minutos.',
+}
+
+function getState(cls) {
+  if (!cls) return null
+  const now = new Date()
+  const startsAt = new Date(cls.starts_at)
+  const endsAt = new Date(cls.ends_at)
+  if (endsAt < now) return 'past'
+  if (cls.is_booked) return 'booked'
+  if (startsAt - now < 60 * 60 * 1000) return 'too_late'
+  if (cls.confirmed_count >= cls.max_capacity) return 'full'
+  return 'available'
+}
+
+export default function ClassModal({ cls, selectedDate, onClose }) {
+  const { profile } = useAuth()
+  const { data: bono } = useBono(profile?.id)
+  const queryClient = useQueryClient()
+  const [error, setError] = useState('')
+
+  const state = getState(cls)
+  const sportColor = cls ? (SPORT_COLORS[cls.sport_slug] ?? 'var(--teal)') : 'var(--teal)'
+  const free = cls ? cls.max_capacity - cls.confirmed_count : 0
+
+  // Lock body scroll while open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  const bookMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('book_class', {
+        p_class_id: cls.id,
+        p_user_id:  profile.id,
+      })
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: ['classes', selectedDate] })
+        queryClient.invalidateQueries({ queryKey: ['bono', profile.id] })
+        onClose()
+      } else {
+        setError(BOOK_ERRORS[data.error] ?? 'Error al reservar. Inténtalo de nuevo.')
+      }
+    },
+    onError: (err) => setError(`Error: ${err?.message ?? 'Error de conexión.'}`),
+  })
+
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('cancel_reservation', {
+        p_reservation_id: cls.reservation_id,
+        p_user_id:        profile.id,
+      })
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: ['classes', selectedDate] })
+        queryClient.invalidateQueries({ queryKey: ['bono', profile.id] })
+        onClose()
+      } else {
+        setError(CANCEL_ERRORS[data.error] ?? 'No se pudo cancelar la reserva.')
+      }
+    },
+    onError: () => setError('Error de conexión. Inténtalo de nuevo.'),
+  })
+
+  const isPending = bookMutation.isPending || cancelMutation.isPending
+
+  const bonoLabel = bono
+    ? bono.bonos.max_classes === null
+      ? `${bono.bonos.name} (ilimitado)`
+      : `${bono.bonos.name} · ${bono.bonos.max_classes - bono.classes_used} clases restantes`
+    : 'Sin bono activo este mes'
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          zIndex: 100,
+          animation: 'fade-up 0.2s ease',
+        }}
+      />
+
+      {/* Sheet */}
+      <div
+        style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          background: 'var(--surface)',
+          borderRadius: '20px 20px 0 0',
+          borderTop: '1px solid var(--border)',
+          zIndex: 101,
+          paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
+          animation: 'slide-up 0.28s cubic-bezier(0.32,0.72,0,1)',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+        }}
+      >
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--surface3)' }} />
+        </div>
+
+        <div className="px-5 pt-2">
+          {/* Sport badge */}
+          <span style={{
+            fontSize: '11px', fontWeight: 600, letterSpacing: '1px',
+            textTransform: 'uppercase', color: sportColor,
+            fontFamily: 'var(--font-body)',
+          }}>
+            {cls?.sport_name}
+          </span>
+
+          {/* Title */}
+          <h2 style={{
+            fontFamily: 'var(--font-head)',
+            fontSize: '28px', fontWeight: 800,
+            color: 'var(--text)', letterSpacing: '0.5px',
+            lineHeight: 1.05, marginTop: '4px',
+          }}>
+            {cls?.title}
+          </h2>
+
+          {/* Date / time */}
+          <p style={{ color: 'var(--muted)', fontSize: '14px', marginTop: '6px', textTransform: 'capitalize' }}>
+            {cls && formatDayLong(cls.starts_at)} · {cls && formatTime(cls.starts_at)} – {cls && formatTime(cls.ends_at)}
+          </p>
+
+          {cls?.instructor && (
+            <p style={{ color: 'var(--muted)', fontSize: '13px', marginTop: '2px' }}>
+              Instructor: <span style={{ color: 'var(--text)' }}>{cls.instructor}</span>
+            </p>
+          )}
+
+          {cls?.notes && (
+            <p style={{ color: 'var(--muted)', fontSize: '13px', marginTop: '4px' }}>
+              {cls.notes}
+            </p>
+          )}
+
+          {/* Divider */}
+          <div style={{ height: '1px', background: 'var(--border)', margin: '16px 0' }} />
+
+          {/* Capacity */}
+          <div className="flex items-center justify-between mb-2">
+            <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Aforo</span>
+            <span style={{ fontSize: '14px', color: 'var(--text)', fontWeight: 600 }}>
+              {cls?.confirmed_count}/{cls?.max_capacity}
+              {state === 'available' && <span style={{ color: 'var(--success)', fontWeight: 400, marginLeft: '6px' }}>({free} libres)</span>}
+              {state === 'full' && <span style={{ color: 'var(--danger)', fontWeight: 400, marginLeft: '6px' }}>(Completa)</span>}
+            </span>
+          </div>
+          <div style={{ height: '6px', borderRadius: '3px', background: 'var(--surface3)', overflow: 'hidden', marginBottom: '16px' }}>
+            <div style={{
+              height: '100%',
+              width: `${cls ? Math.min((cls.confirmed_count / cls.max_capacity) * 100, 100) : 0}%`,
+              background: state === 'full' ? 'var(--danger)' : state === 'booked' ? 'var(--teal)' : 'var(--success)',
+              borderRadius: '3px',
+              transition: 'width 0.4s',
+            }} />
+          </div>
+
+          {/* Bono */}
+          <div className="flex items-center justify-between" style={{
+            padding: '10px 14px',
+            background: 'var(--surface2)',
+            borderRadius: '10px',
+            marginBottom: '20px',
+          }}>
+            <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Tu bono</span>
+            <span style={{
+              fontSize: '13px', fontWeight: 600,
+              color: bono ? 'var(--text)' : 'var(--danger)',
+            }}>
+              {bonoLabel}
+            </span>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <p style={{
+              fontSize: '13px', color: 'var(--danger)',
+              background: 'rgba(224,85,85,0.1)',
+              padding: '10px 14px', borderRadius: '10px',
+              marginBottom: '16px', textAlign: 'center',
+            }}>
+              {error}
+            </p>
+          )}
+
+          {/* Action button */}
+          {state === 'available' && (
+            <button
+              onClick={() => { setError(''); bookMutation.mutate() }}
+              disabled={isPending}
+              className="btn-primary"
+            >
+              {isPending ? 'Reservando...' : 'RESERVAR PLAZA'}
+            </button>
+          )}
+
+          {state === 'booked' && (
+            <button
+              onClick={() => { setError(''); cancelMutation.mutate() }}
+              disabled={isPending}
+              className="btn-primary"
+              style={{ background: 'var(--surface3)', color: 'var(--danger)', border: '1px solid var(--danger)' }}
+            >
+              {isPending ? 'Cancelando...' : 'CANCELAR RESERVA'}
+            </button>
+          )}
+
+          {state === 'full' && (
+            <div className="btn-primary" style={{ background: 'var(--surface3)', color: 'var(--muted)', cursor: 'default', textAlign: 'center' }}>
+              CLASE COMPLETA
+            </div>
+          )}
+
+          {(state === 'too_late' || state === 'past') && (
+            <div className="btn-primary" style={{ background: 'var(--surface3)', color: 'var(--muted)', cursor: 'default', textAlign: 'center' }}>
+              {state === 'past' ? 'CLASE FINALIZADA' : 'RESERVA CERRADA'}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes slide-up {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+      `}</style>
+    </>
+  )
+}
