@@ -10,8 +10,6 @@ const SPORT_COLORS = { crossfit: '#0abfbf', hyrox: '#e8a020' }
 const ADD_ERRORS = {
   class_not_found: 'Clase no encontrada.',
   already_booked: 'El usuario ya tiene esta clase reservada.',
-  no_bono: 'El usuario no tiene bono activo este mes.',
-  bono_exhausted: 'El usuario ha agotado su bono este mes.',
 }
 
 export default function AdminClassDetail() {
