@@ -100,13 +100,12 @@ function InfoCard({ rows }) {
 }
 
 export default function Profile() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, refreshProfile } = useAuth()
   const queryClient = useQueryClient()
   const { data: bono } = useBono(profile?.id)
   const { data: sports = [] } = useUserSports(profile?.id)
 
   const [uploading, setUploading] = useState(false)
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null)
   const [uploadError, setUploadError] = useState('')
 
   const [showPasswordForm, setShowPasswordForm] = useState(false)
@@ -144,7 +143,7 @@ export default function Profile() {
       const url = `${urlData.publicUrl}?t=${Date.now()}`
       const { error: dbError } = await supabase.from('users').update({ avatar_url: url }).eq('id', profile.id)
       if (dbError) throw new Error('DB: ' + dbError.message)
-      setAvatarUrl(url)
+      await refreshProfile(profile.id)
     } catch (err) {
       setUploadError(err.message ?? 'Error al subir la foto.')
     } finally {
@@ -208,7 +207,7 @@ export default function Profile() {
             borderRadius: '20px', padding: '28px 16px 20px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
           }}>
-            <Avatar url={avatarUrl} name={profile?.full_name} onUpload={handleAvatarUpload} uploading={uploading} />
+            <Avatar url={profile?.avatar_url ?? null} name={profile?.full_name} onUpload={handleAvatarUpload} uploading={uploading} />
             {uploadError && (
               <p style={{ fontSize: '12px', color: 'var(--danger)', textAlign: 'center', padding: '0 8px' }}>
                 {uploadError}

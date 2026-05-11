@@ -88,7 +88,7 @@ export function AuthProvider({ children }) {
   const loading = session === undefined || (session !== null && !profileLoaded)
 
   return (
-    <AuthContext.Provider value={{ session, profile, loading, isAdmin, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, profile, loading, isAdmin, signIn, signOut, refreshProfile: fetchProfile }}>
       {children}
     </AuthContext.Provider>
   )
