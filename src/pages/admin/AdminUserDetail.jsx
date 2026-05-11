@@ -115,8 +115,9 @@ export default function AdminUserDetail() {
 
   const activeMutation = useMutation({
     mutationFn: async (is_active) => {
-      const { error } = await supabase.from('users').update({ is_active }).eq('id', id)
+      const { data, error } = await supabase.rpc('set_user_active', { p_user_id: id, p_is_active: is_active })
       if (error) throw error
+      if (!data.success) throw new Error(data.error)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-user', id] })
