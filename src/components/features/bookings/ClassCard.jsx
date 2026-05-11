@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { formatTime } from '../../../lib/utils'
 
 const SPORT_COLORS = {
@@ -18,7 +19,15 @@ function getState(cls) {
   return 'available'
 }
 
-export default function ClassCard({ cls, onPress }) {
+export default function ClassCard({ cls, onPress, index = 0 }) {
+  const [visible, setVisible] = useState(false)
+  const [pressed, setPressed] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), index * 65)
+    return () => clearTimeout(t)
+  }, [index])
+
   const state = getState(cls)
   const sportColor = SPORT_COLORS[cls.sport_slug] ?? 'var(--teal)'
   const free = cls.max_capacity - cls.confirmed_count
@@ -36,9 +45,23 @@ export default function ClassCard({ cls, onPress }) {
 
   const barColor = state === 'full' ? 'var(--danger)' : state === 'booked' ? 'var(--teal)' : 'var(--success)'
 
+  const transform = pressed && !isPast
+    ? 'scale(0.97)'
+    : visible ? 'translateY(0)' : 'translateY(20px)'
+
+  const transition = pressed
+    ? 'transform 0.08s ease, border-color 0.15s'
+    : 'opacity 0.38s ease, transform 0.42s cubic-bezier(0.34, 1.2, 0.64, 1), border-color 0.15s'
+
   return (
     <button
       onClick={() => onPress(cls)}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => setPressed(false)}
+      onTouchStart={() => setPressed(true)}
+      onTouchEnd={() => setPressed(false)}
+      className={`class-card${state === 'booked' ? ' class-card--booked' : ''}`}
       style={{
         display: 'block',
         width: '100%',
@@ -48,10 +71,11 @@ export default function ClassCard({ cls, onPress }) {
         padding: '0',
         textAlign: 'left',
         cursor: isPast ? 'default' : 'pointer',
-        opacity: isPast ? 0.5 : 1,
+        opacity: visible ? (isPast ? 0.5 : 1) : 0,
+        transform,
+        transition,
         outline: 'none',
         overflow: 'hidden',
-        transition: 'border-color 0.15s, transform 0.1s',
       }}
     >
       {/* Sport accent bar */}

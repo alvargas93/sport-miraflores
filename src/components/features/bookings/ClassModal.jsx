@@ -125,9 +125,11 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
         onClick={onClose}
         style={{
           position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.6)',
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           zIndex: 100,
-          animation: 'fade-up 0.2s ease',
+          animation: 'fade-up 0.25s ease',
         }}
       />
 
@@ -136,11 +138,11 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
         style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
           background: 'var(--surface)',
-          borderRadius: '20px 20px 0 0',
-          borderTop: '1px solid var(--border)',
+          borderRadius: '24px 24px 0 0',
+          borderTop: '1px solid rgba(10,191,191,0.15)',
           zIndex: 101,
           paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
-          animation: 'slide-up 0.28s cubic-bezier(0.32,0.72,0,1)',
+          animation: 'slide-up-spring 0.48s cubic-bezier(0.34, 1.26, 0.64, 1)',
           maxHeight: '90vh',
           overflowY: 'auto',
         }}
@@ -312,12 +314,6 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
         </div>
       </div>
 
-      <style>{`
-        @keyframes slide-up {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-      `}</style>
     </>
   )
 }

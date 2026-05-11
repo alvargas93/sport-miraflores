@@ -37,11 +37,14 @@ export default function CalendarStrip({ selectedDate, onSelectDate }) {
   const monthLabel = `${MONTHS[selectedDateObj.getMonth()]} ${selectedDateObj.getFullYear()}`
 
   return (
-    <div style={{ background: 'var(--surface)', borderBottom: '1px solid rgba(10,191,191,0.1)' }}>
+    <div style={{
+      background: 'var(--surface)',
+      borderBottom: '1px solid rgba(10,191,191,0.12)',
+    }}>
       {/* Month label */}
       <div style={{
         padding: '10px 16px 0',
-        fontSize: '12px', fontWeight: 700, letterSpacing: '1px',
+        fontSize: '11px', fontWeight: 700, letterSpacing: '2px',
         color: 'var(--muted)', textTransform: 'uppercase',
         fontFamily: 'var(--font-head)',
       }}>
@@ -52,7 +55,7 @@ export default function CalendarStrip({ selectedDate, onSelectDate }) {
       <div
         ref={scrollRef}
         style={{
-          display: 'flex', gap: '4px', padding: '8px 12px 10px',
+          display: 'flex', gap: '4px', padding: '8px 12px 12px',
           overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none',
         }}
       >
@@ -71,23 +74,31 @@ export default function CalendarStrip({ selectedDate, onSelectDate }) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                minWidth: '44px',
-                padding: '7px 4px',
-                borderRadius: '12px',
-                border: 'none',
-                background: isSelected ? 'var(--teal)' : 'transparent',
+                minWidth: '46px',
+                padding: '8px 4px',
+                borderRadius: '14px',
+                border: isSelected ? 'none' : isToday ? '1.5px solid rgba(10,191,191,0.3)' : '1.5px solid transparent',
+                background: isSelected
+                  ? 'var(--teal)'
+                  : isToday
+                  ? 'rgba(10,191,191,0.07)'
+                  : 'transparent',
                 cursor: 'pointer',
-                transition: 'background 0.15s',
+                transform: isSelected ? 'scale(1.1) translateY(-4px)' : 'scale(1) translateY(0)',
+                boxShadow: isSelected ? '0 8px 20px rgba(10,191,191,0.45)' : 'none',
+                transition: 'background 0.2s, transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.2s',
                 flexShrink: 0,
                 outline: 'none',
                 gap: '2px',
+                position: 'relative',
+                zIndex: isSelected ? 1 : 0,
               }}
             >
               <span style={{
                 fontSize: '9px',
                 letterSpacing: '0.5px',
                 textTransform: 'uppercase',
-                color: isSelected ? 'rgba(0,0,0,0.65)' : isPast ? 'var(--muted)' : 'var(--muted)',
+                color: isSelected ? 'rgba(0,0,0,0.6)' : isPast ? 'rgba(122,122,122,0.5)' : 'var(--muted)',
                 fontFamily: 'var(--font-body)',
                 fontWeight: 600,
               }}>
@@ -98,18 +109,23 @@ export default function CalendarStrip({ selectedDate, onSelectDate }) {
                 fontFamily: 'var(--font-head)',
                 fontWeight: 800,
                 lineHeight: 1.15,
-                color: isSelected ? '#000' : isPast ? 'rgba(255,255,255,0.25)' : isToday ? 'var(--teal)' : 'var(--text)',
+                color: isSelected
+                  ? '#000'
+                  : isPast
+                  ? 'rgba(255,255,255,0.2)'
+                  : isToday
+                  ? 'var(--teal)'
+                  : 'var(--text)',
               }}>
                 {day.getDate()}
               </span>
-              {/* Today dot (only when not selected) */}
               {isToday && !isSelected && (
                 <div style={{
                   width: '4px', height: '4px', borderRadius: '50%',
                   background: 'var(--teal)',
+                  boxShadow: '0 0 4px rgba(10,191,191,0.8)',
                 }} />
               )}
-              {/* Spacer when no dot */}
               {(!isToday || isSelected) && <div style={{ height: '4px' }} />}
             </button>
           )
