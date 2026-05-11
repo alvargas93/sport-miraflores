@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -105,8 +105,13 @@ export default function Profile() {
   const { data: bono } = useBono(profile?.id)
   const { data: sports = [] } = useUserSports(profile?.id)
 
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+
+  useEffect(() => {
+    if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
+  }, [profile?.avatar_url])
 
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwNew, setPwNew] = useState('')
@@ -143,7 +148,8 @@ export default function Profile() {
       const url = `${urlData.publicUrl}?t=${Date.now()}`
       const { error: dbError } = await supabase.from('users').update({ avatar_url: url }).eq('id', profile.id)
       if (dbError) throw new Error('DB: ' + dbError.message)
-      await refreshProfile(profile.id)
+      setAvatarUrl(url)
+      refreshProfile(profile.id)
     } catch (err) {
       setUploadError(err.message ?? 'Error al subir la foto.')
     } finally {
@@ -207,7 +213,7 @@ export default function Profile() {
             borderRadius: '20px', padding: '28px 16px 20px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
           }}>
-            <Avatar url={profile?.avatar_url ?? null} name={profile?.full_name} onUpload={handleAvatarUpload} uploading={uploading} />
+            <Avatar url={avatarUrl} name={profile?.full_name} onUpload={handleAvatarUpload} uploading={uploading} />
             {uploadError && (
               <p style={{ fontSize: '12px', color: 'var(--danger)', textAlign: 'center', padding: '0 8px' }}>
                 {uploadError}
