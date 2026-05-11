@@ -121,6 +121,20 @@ export default function AdminClassDetail() {
     },
   })
 
+  const reactivateMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('classes')
+        .update({ is_cancelled: false, cancel_reason: null })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-class-detail', id] })
+      queryClient.invalidateQueries({ queryKey: ['admin-classes'] })
+    },
+  })
+
   if (isLoading) return (
     <div className="flex justify-center py-16">
       <div className="w-7 h-7 rounded-full border-2 border-teal" style={{ borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
@@ -162,6 +176,16 @@ export default function AdminClassDetail() {
             style={{ marginTop: '12px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--danger)', color: 'var(--danger)', background: 'transparent', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
           >
             Cancelar clase
+          </button>
+        )}
+
+        {cls.is_cancelled && (
+          <button
+            onClick={() => reactivateMutation.mutate()}
+            disabled={reactivateMutation.isPending}
+            style={{ marginTop: '12px', padding: '8px 16px', borderRadius: '10px', border: '1px solid var(--success)', color: 'var(--success)', background: 'transparent', cursor: 'pointer', fontSize: '13px', fontWeight: 600, opacity: reactivateMutation.isPending ? 0.6 : 1 }}
+          >
+            {reactivateMutation.isPending ? 'Reactivando…' : 'Reactivar clase'}
           </button>
         )}
       </div>
