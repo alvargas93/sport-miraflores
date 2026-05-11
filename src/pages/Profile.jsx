@@ -107,6 +107,7 @@ export default function Profile() {
 
   const [uploading, setUploading] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null)
+  const [uploadError, setUploadError] = useState('')
 
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwNew, setPwNew] = useState('')
@@ -131,17 +132,21 @@ export default function Profile() {
 
   async function handleAvatarUpload(file) {
     setUploading(true)
+    setUploadError('')
     try {
-      const ext = file.name.split('.').pop()
+      const ext = file.name.split('.').pop().toLowerCase()
       const path = `${profile.id}/avatar.${ext}`
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
-      if (uploadError) throw uploadError
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      const url = `${publicUrl}?t=${Date.now()}`
-      await supabase.from('users').update({ avatar_url: url }).eq('id', profile.id)
+      const { error: storageError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (storageError) throw new Error('Storage: ' + storageError.message)
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+      const url = `${urlData.publicUrl}?t=${Date.now()}`
+      const { error: dbError } = await supabase.from('users').update({ avatar_url: url }).eq('id', profile.id)
+      if (dbError) throw new Error('DB: ' + dbError.message)
       setAvatarUrl(url)
-    } catch {
-      // silently ignore
+    } catch (err) {
+      setUploadError(err.message ?? 'Error al subir la foto.')
     } finally {
       setUploading(false)
     }
@@ -204,6 +209,11 @@ export default function Profile() {
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
           }}>
             <Avatar url={avatarUrl} name={profile?.full_name} onUpload={handleAvatarUpload} uploading={uploading} />
+            {uploadError && (
+              <p style={{ fontSize: '12px', color: 'var(--danger)', textAlign: 'center', padding: '0 8px' }}>
+                {uploadError}
+              </p>
+            )}
             <div style={{ textAlign: 'center', marginTop: '4px' }}>
               <p style={{
                 fontFamily: 'var(--font-head)', fontSize: '24px', fontWeight: 800,
