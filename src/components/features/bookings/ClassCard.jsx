@@ -10,6 +10,7 @@ function getState(cls) {
   const startsAt = new Date(cls.starts_at)
   const endsAt = new Date(cls.ends_at)
 
+  if (cls.is_cancelled) return 'cancelled'
   if (endsAt < now) return 'past'
   if (cls.is_booked) return 'booked'
   if (startsAt - now < 60 * 60 * 1000) return 'too_late'
@@ -21,15 +22,16 @@ export default function ClassCard({ cls, onPress }) {
   const state = getState(cls)
   const sportColor = SPORT_COLORS[cls.sport_slug] ?? 'var(--teal)'
   const free = cls.max_capacity - cls.confirmed_count
-  const isPast = state === 'past' || state === 'too_late'
+  const isPast = state === 'past' || state === 'too_late' || state === 'cancelled'
   const fillPct = Math.min((cls.confirmed_count / cls.max_capacity) * 100, 100)
 
   const stateConfig = {
-    available: { label: `${free} ${free === 1 ? 'plaza' : 'plazas'}`, color: 'var(--success)', dot: true },
-    full:      { label: 'Completa', color: 'var(--danger)', dot: false },
-    booked:    { label: 'Reservada', color: 'var(--teal)', dot: false },
-    too_late:  { label: 'Cerrada', color: 'var(--muted)', dot: false },
-    past:      { label: 'Finalizada', color: 'var(--muted)', dot: false },
+    available:  { label: `${free} ${free === 1 ? 'plaza' : 'plazas'}`, color: 'var(--success)', dot: true },
+    full:       { label: 'Completa', color: 'var(--danger)', dot: false },
+    booked:     { label: 'Reservada', color: 'var(--teal)', dot: false },
+    too_late:   { label: 'Cerrada', color: 'var(--muted)', dot: false },
+    past:       { label: 'Finalizada', color: 'var(--muted)', dot: false },
+    cancelled:  { label: 'Cancelada', color: 'var(--danger)', dot: false },
   }[state]
 
   const barColor = state === 'full' ? 'var(--danger)' : state === 'booked' ? 'var(--teal)' : 'var(--success)'

@@ -31,6 +31,7 @@ function getState(cls) {
   const now = new Date()
   const startsAt = new Date(cls.starts_at)
   const endsAt = new Date(cls.ends_at)
+  if (cls.is_cancelled) return 'cancelled'
   if (endsAt < now) return 'past'
   if (cls.is_booked) return 'booked'
   if (startsAt - now < 60 * 60 * 1000) return 'too_late'
@@ -300,6 +301,12 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
           {(state === 'too_late' || state === 'past') && (
             <div className="btn-primary" style={{ background: 'var(--surface3)', color: 'var(--muted)', cursor: 'default', textAlign: 'center' }}>
               {state === 'past' ? 'CLASE FINALIZADA' : 'RESERVA CERRADA'}
+            </div>
+          )}
+
+          {state === 'cancelled' && (
+            <div className="btn-primary" style={{ background: 'var(--surface3)', color: 'var(--muted)', cursor: 'default', textAlign: 'center' }}>
+              CLASE CANCELADA
             </div>
           )}
         </div>

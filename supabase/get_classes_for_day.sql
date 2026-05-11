@@ -39,6 +39,7 @@ BEGIN
         c.max_capacity,
         c.instructor,
         c.notes,
+        c.is_cancelled,
         COALESCE(rc.confirmed_count, 0) AS confirmed_count,
         COALESCE(ur.is_booked, false)   AS is_booked,
         ur.reservation_id
@@ -56,7 +57,6 @@ BEGIN
         WHERE user_id = p_user_id AND status = 'confirmed'
       ) ur ON ur.class_id = c.id
       WHERE (c.starts_at AT TIME ZONE 'Europe/Madrid')::date = p_date
-        AND c.is_cancelled = false
         AND (
           v_user_role IN ('sport_admin', 'general_admin')
           OR c.sport_id = ANY(v_sport_ids)
