@@ -262,28 +262,29 @@ export default function AdminTemplates() {
       </div>
 
       {/* Generate / delete month */}
-      <div style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)', padding: '12px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <input
           type="month"
           value={generateMonth}
           onChange={(e) => setGenerateMonth(e.target.value)}
           className="input-field"
-          style={{ flex: 1 }}
         />
-        <button
-          onClick={() => generateMutation.mutate()}
-          disabled={generateMutation.isPending}
-          style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--teal)', color: 'var(--teal)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
-        >
-          {generateMutation.isPending ? 'Generando…' : 'Generar mes'}
-        </button>
-        <button
-          onClick={() => setShowDeleteConfirm(true)}
-          disabled={deleteMonthMutation.isPending}
-          style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--danger)', color: 'var(--danger)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
-        >
-          Borrar mes
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => generateMutation.mutate()}
+            disabled={generateMutation.isPending}
+            style={{ flex: 1, padding: '10px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--teal)', color: 'var(--teal)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+          >
+            {generateMutation.isPending ? 'Generando…' : 'Generar mes'}
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={deleteMonthMutation.isPending}
+            style={{ flex: 1, padding: '10px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--danger)', color: 'var(--danger)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+          >
+            Borrar mes
+          </button>
+        </div>
       </div>
       {generateResult !== null && (
         <p style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--success)', background: 'rgba(46,204,143,0.1)', borderBottom: '1px solid var(--border)' }}>
