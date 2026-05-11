@@ -44,7 +44,7 @@ export default function AdminUsers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, role, is_active')
+        .select('id, email, full_name, role, is_active, avatar_url')
         .order('full_name')
       if (error) throw error
       return data ?? []
@@ -198,10 +198,12 @@ export default function AdminUsers() {
                     background: 'var(--teal-glow)', border: '1px solid var(--teal)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontFamily: 'var(--font-head)', fontSize: '16px', fontWeight: 800, color: 'var(--teal)',
-                    cursor: 'pointer',
+                    cursor: 'pointer', overflow: 'hidden',
                   }}
                 >
-                  {initials}
+                  {user.avatar_url
+                    ? <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : initials}
                 </div>
 
                 <div className="flex-1 min-w-0" onClick={() => navigate(`/admin/users/${user.id}`)} style={{ cursor: 'pointer' }}>

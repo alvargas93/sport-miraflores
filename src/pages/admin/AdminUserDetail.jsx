@@ -202,8 +202,11 @@ export default function AdminUserDetail() {
             background: 'var(--teal-glow)', border: '2px solid var(--teal)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: 'var(--font-head)', fontSize: '20px', fontWeight: 800, color: 'var(--teal)',
+            overflow: 'hidden',
           }}>
-            {initials}
+            {user.avatar_url
+              ? <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontFamily: 'var(--font-head)', fontSize: '20px', fontWeight: 800, color: 'var(--text)', letterSpacing: '0.5px' }}>
