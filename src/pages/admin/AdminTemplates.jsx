@@ -68,6 +68,8 @@ export default function AdminTemplates() {
   const [form, setForm] = useState(emptyForm)
   const [generateMonth, setGenerateMonth] = useState(currentMonthStart().slice(0, 7))
   const [generateResult, setGenerateResult] = useState(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteResult, setDeleteResult] = useState(null)
 
   const { data: sports = [] } = useQuery({
     queryKey: ['sports'],
@@ -190,6 +192,23 @@ export default function AdminTemplates() {
     },
   })
 
+  const deleteMonthMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('delete_month_classes', {
+        p_month: generateMonth + '-01',
+        p_admin_id: profile.id,
+      })
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data) => {
+      setShowDeleteConfirm(false)
+      setDeleteResult(data)
+      queryClient.invalidateQueries({ queryKey: ['admin-classes'] })
+      setTimeout(() => setDeleteResult(null), 5000)
+    },
+  })
+
   const activeTemplates = templates.filter((t) => t.is_active)
   const inactiveTemplates = templates.filter((t) => !t.is_active)
 
@@ -242,8 +261,8 @@ export default function AdminTemplates() {
         </button>
       </div>
 
-      {/* Generate month */}
-      <div style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)', padding: '12px 16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+      {/* Generate / delete month */}
+      <div style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)', padding: '12px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
         <input
           type="month"
           value={generateMonth}
@@ -254,14 +273,29 @@ export default function AdminTemplates() {
         <button
           onClick={() => generateMutation.mutate()}
           disabled={generateMutation.isPending}
-          style={{ padding: '10px 16px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--teal)', color: 'var(--teal)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
+          style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--teal)', color: 'var(--teal)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
         >
           {generateMutation.isPending ? 'Generando…' : 'Generar mes'}
+        </button>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          disabled={deleteMonthMutation.isPending}
+          style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--surface)', border: '1px solid var(--danger)', color: 'var(--danger)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
+        >
+          Borrar mes
         </button>
       </div>
       {generateResult !== null && (
         <p style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--success)', background: 'rgba(46,204,143,0.1)', borderBottom: '1px solid var(--border)' }}>
           {generateResult === 0 ? 'No se crearon clases nuevas (ya existen).' : `${generateResult} clases creadas correctamente.`}
+        </p>
+      )}
+      {deleteResult !== null && (
+        <p style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--danger)', background: 'rgba(224,85,85,0.1)', borderBottom: '1px solid var(--border)' }}>
+          {deleteResult.deleted === 0
+            ? 'No se borró ninguna clase.'
+            : `${deleteResult.deleted} ${deleteResult.deleted === 1 ? 'clase borrada' : 'clases borradas'}.`}
+          {deleteResult.skipped > 0 && ` ${deleteResult.skipped} ${deleteResult.skipped === 1 ? 'clase omitida por tener reservas' : 'clases omitidas por tener reservas'}.`}
         </p>
       )}
 
@@ -295,6 +329,44 @@ export default function AdminTemplates() {
             </p>
           )}
         </div>
+      )}
+
+      {/* Delete month confirmation sheet */}
+      {showDeleteConfirm && (
+        <>
+          <div onClick={() => setShowDeleteConfirm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100 }} />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0,
+            background: 'var(--surface)', borderRadius: '20px 20px 0 0',
+            borderTop: '1px solid var(--border)', zIndex: 101,
+            padding: '20px 20px calc(24px + env(safe-area-inset-bottom))',
+          }}>
+            <p style={{ fontFamily: 'var(--font-head)', fontSize: '20px', fontWeight: 800, color: 'var(--danger)', marginBottom: '8px' }}>
+              Borrar clases del mes
+            </p>
+            <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '6px' }}>
+              Se eliminarán todas las clases de <strong style={{ color: 'var(--text)' }}>{generateMonth}</strong> que no tengan reservas activas.
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '20px' }}>
+              Las clases con reservas confirmadas no se borrarán.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: '10px', background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--muted)', cursor: 'pointer', fontSize: '14px' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteMonthMutation.mutate()}
+                disabled={deleteMonthMutation.isPending}
+                style={{ flex: 1, padding: '12px', borderRadius: '10px', background: 'var(--danger)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px', opacity: deleteMonthMutation.isPending ? 0.7 : 1 }}
+              >
+                {deleteMonthMutation.isPending ? 'Borrando…' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Create/Edit form sheet */}
