@@ -83,12 +83,12 @@ function InfoCard({ rows }) {
   return (
     <div style={{
       background: 'var(--surface)', borderRadius: '16px',
-      border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden',
+      border: '1px solid var(--card-border)', overflow: 'hidden',
     }}>
       {rows.map((row, i) => (
         <div key={i} style={{
           padding: '13px 16px',
-          borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.05)',
+          borderTop: i === 0 ? 'none' : '1px solid var(--card-border)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
         }}>
           <span style={{ fontSize: '13px', color: 'var(--muted)', flexShrink: 0 }}>{row.label}</span>
@@ -114,6 +114,20 @@ export default function Profile() {
   const [pwLoading, setPwLoading] = useState(false)
   const [pwError, setPwError] = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
+
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') !== 'light')
+
+  function toggleTheme() {
+    const next = !isDark
+    setIsDark(next)
+    if (next) {
+      localStorage.setItem('theme', 'dark')
+      document.documentElement.classList.remove('light')
+    } else {
+      localStorage.setItem('theme', 'light')
+      document.documentElement.classList.add('light')
+    }
+  }
 
   async function handleAvatarUpload(file) {
     setUploading(true)
@@ -185,7 +199,7 @@ export default function Profile() {
 
           {/* Avatar + name card */}
           <div style={{
-            background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.05)',
+            background: 'var(--surface)', border: '1px solid var(--card-border)',
             borderRadius: '20px', padding: '28px 16px 20px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
           }}>
@@ -288,12 +302,68 @@ export default function Profile() {
             <InfoCard rows={[{ label: 'Email', value: profile?.email }]} />
           </div>
 
+          {/* Apariencia */}
+          <div>
+            <SectionLabel>Apariencia</SectionLabel>
+            <div style={{
+              background: 'var(--surface)', borderRadius: '16px',
+              border: '1px solid var(--card-border)', overflow: 'hidden',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '14px 16px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '10px',
+                    background: 'rgba(10,191,191,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {isDark ? (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                      </svg>
+                    ) : (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                      </svg>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '14px', color: 'var(--text)' }}>
+                    {isDark ? 'Modo oscuro' : 'Modo claro'}
+                  </span>
+                </div>
+                <button
+                  onClick={toggleTheme}
+                  style={{
+                    width: '44px', height: '24px', borderRadius: '12px',
+                    background: isDark ? 'var(--surface3)' : 'var(--teal)',
+                    border: 'none', cursor: 'pointer', position: 'relative',
+                    transition: 'background 0.25s', flexShrink: 0,
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: '2px', left: '2px',
+                    width: '20px', height: '20px', borderRadius: '50%',
+                    background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    transform: isDark ? 'translateX(0)' : 'translateX(20px)',
+                    transition: 'transform 0.25s',
+                  }} />
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Seguridad */}
           <div>
             <SectionLabel>Seguridad</SectionLabel>
             <div style={{
               background: 'var(--surface)', borderRadius: '16px',
-              border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden',
+              border: '1px solid var(--card-border)', overflow: 'hidden',
             }}>
               {!showPasswordForm ? (
                 <button
@@ -356,7 +426,7 @@ export default function Profile() {
                       style={{
                         flex: 1, padding: '11px', borderRadius: '12px', fontSize: '13px',
                         background: 'var(--surface2)', color: 'var(--muted)',
-                        border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer',
+                        border: '1px solid var(--card-border)', cursor: 'pointer',
                       }}
                     >
                       Cancelar

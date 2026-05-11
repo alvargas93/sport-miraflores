@@ -20,19 +20,37 @@
 }
 
 :root {
-  --teal:      #0abfbf;
-  --teal-dark: #077a7a;
-  --teal-glow: rgba(10,191,191,0.18);
-  --bg:        #0e0e0e;
-  --surface:   #161616;
-  --surface2:  #1e1e1e;
-  --surface3:  #252525;
-  --border:    rgba(10,191,191,0.15);
-  --text:      #f0f0f0;
-  --muted:     #7a7a7a;
-  --danger:    #e05555;
-  --warning:   #e8a020;
-  --success:   #2ecc8f;
+  --teal:        #0abfbf;
+  --teal-dark:   #077a7a;
+  --teal-glow:   rgba(10,191,191,0.18);
+  --bg:          #0e0e0e;
+  --surface:     #161616;
+  --surface2:    #1e1e1e;
+  --surface3:    #252525;
+  --border:      rgba(10,191,191,0.15);
+  --text:        #f0f0f0;
+  --muted:       #7a7a7a;
+  --danger:      #e05555;
+  --warning:     #e8a020;
+  --success:     #2ecc8f;
+  --card-border: rgba(255,255,255,0.06);
+}
+
+.light {
+  --teal-glow:   rgba(10,191,191,0.1);
+  --bg:          #f2f4f7;
+  --surface:     #ffffff;
+  --surface2:    #eef0f5;
+  --surface3:    #e2e6ed;
+  --border:      rgba(10,191,191,0.22);
+  --text:        #111827;
+  --muted:       #6b7280;
+  --card-border: rgba(0,0,0,0.07);
+}
+
+.light select option {
+  background: #ffffff;
+  color: #111827;
 }
 
 *, *::before, *::after {

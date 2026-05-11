@@ -1,3 +1,7 @@
+// Apply saved theme before React renders to avoid flash
+const savedTheme = localStorage.getItem('theme') ?? 'dark'
+if (savedTheme === 'light') document.documentElement.classList.add('light')
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
