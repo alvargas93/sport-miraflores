@@ -135,8 +135,8 @@ export default function Login() {
 
   return (
     <div
-      className="flex flex-col items-center justify-center h-full px-10"
-      style={{ background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}
+      className="flex flex-col items-center justify-center h-full"
+      style={{ background: 'var(--bg)', position: 'relative', overflow: 'hidden', padding: '0 40px' }}
     >
       {/* Glow de fondo */}
       <div style={{
