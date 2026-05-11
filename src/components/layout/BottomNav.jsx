@@ -79,7 +79,6 @@ export default function BottomNav() {
         borderTop: '1px solid rgba(10,191,191,0.1)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 50,
-        position: 'relative',
       }}
     >
       {/* Sliding indicator */}
