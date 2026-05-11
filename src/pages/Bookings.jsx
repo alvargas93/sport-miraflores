@@ -116,7 +116,7 @@ export default function Bookings() {
         )}
 
         {!isLoading && !isError && classes.length > 0 && (
-          <div className="flex flex-col gap-3 p-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px 20px' }}>
             {classes.map((cls) => (
               <ClassCard key={cls.id} cls={cls} onPress={setSelectedClass} />
             ))}
