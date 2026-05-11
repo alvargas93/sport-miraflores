@@ -58,8 +58,10 @@ export default function AdminBonos() {
         if (error) throw error
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, { userId }) => {
       queryClient.invalidateQueries({ queryKey: ['admin-bonos', monthDate] })
+      queryClient.invalidateQueries({ queryKey: ['admin-user', userId] })
+      queryClient.invalidateQueries({ queryKey: ['admin-user-bonos', userId] })
       setAssigningUserId(null)
       setSelectedBonoId('')
     },
