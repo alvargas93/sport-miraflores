@@ -151,6 +151,7 @@ export default function Login() {
         <img
           src="/logo.png"
           alt="Sport Miraflores"
+          className="logo-img"
           style={{ width: 'clamp(160px, 52vw, 210px)', margin: '0 auto' }}
         />
         <p style={{

@@ -182,7 +182,7 @@ export default function AdminDashboard() {
           </h1>
           <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '1px' }}>Resumen de hoy</p>
         </div>
-        <img src="/logo.png" alt="Sport Miraflores" style={{ height: '38px', opacity: 0.75 }} />
+        <img src="/logo.png" alt="Sport Miraflores" className="logo-img" style={{ height: '38px', opacity: 0.75 }} />
       </div>
 
       <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>

@@ -207,7 +207,7 @@ export default function MyClasses() {
         <h1 style={{ fontFamily: 'var(--font-head)', fontSize: '26px', fontWeight: 800, color: 'var(--text)', letterSpacing: '1px' }}>
           MIS CLASES
         </h1>
-        <img src="/logo.png" alt="Sport Miraflores" style={{ height: '38px', opacity: 0.75 }} />
+        <img src="/logo.png" alt="Sport Miraflores" className="logo-img" style={{ height: '38px', opacity: 0.75 }} />
       </div>
 
       <div className="flex-1 overflow-y-auto">
