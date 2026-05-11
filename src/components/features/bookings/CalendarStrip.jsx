@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react'
 import { parseDateLocal, todayStr } from '../../../lib/utils'
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
 function toStr(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -37,14 +37,24 @@ export default function CalendarStrip({ selectedDate, onSelectDate }) {
   const monthLabel = `${MONTHS[selectedDateObj.getMonth()]} ${selectedDateObj.getFullYear()}`
 
   return (
-    <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ padding: '10px 16px 2px', fontSize: '11px', letterSpacing: '1.5px', color: 'var(--muted)', textTransform: 'uppercase', fontFamily: 'var(--font-body)' }}>
+    <div style={{ background: 'var(--surface)', borderBottom: '1px solid rgba(10,191,191,0.1)' }}>
+      {/* Month label */}
+      <div style={{
+        padding: '10px 16px 0',
+        fontSize: '12px', fontWeight: 700, letterSpacing: '1px',
+        color: 'var(--muted)', textTransform: 'uppercase',
+        fontFamily: 'var(--font-head)',
+      }}>
         {monthLabel}
       </div>
+
+      {/* Day strip */}
       <div
         ref={scrollRef}
-        className="flex gap-1 px-3 pb-3 pt-1"
-        style={{ overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{
+          display: 'flex', gap: '4px', padding: '8px 12px 10px',
+          overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none',
+        }}
       >
         {days.map((day) => {
           const dateStr = toStr(day)
@@ -61,42 +71,46 @@ export default function CalendarStrip({ selectedDate, onSelectDate }) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                minWidth: '42px',
-                padding: '7px 5px 6px',
-                borderRadius: '11px',
-                border: '1.5px solid',
-                borderColor: isSelected ? 'var(--teal)' : 'transparent',
-                background: isSelected ? 'var(--teal-glow)' : 'transparent',
+                minWidth: '44px',
+                padding: '7px 4px',
+                borderRadius: '12px',
+                border: 'none',
+                background: isSelected ? 'var(--teal)' : 'transparent',
                 cursor: 'pointer',
-                transition: 'all 0.15s',
+                transition: 'background 0.15s',
                 flexShrink: 0,
                 outline: 'none',
+                gap: '2px',
               }}
             >
               <span style={{
                 fontSize: '9px',
                 letterSpacing: '0.5px',
                 textTransform: 'uppercase',
-                color: isSelected ? 'var(--teal)' : 'var(--muted)',
+                color: isSelected ? 'rgba(0,0,0,0.65)' : isPast ? 'var(--muted)' : 'var(--muted)',
                 fontFamily: 'var(--font-body)',
+                fontWeight: 600,
               }}>
                 {DAYS[day.getDay()]}
               </span>
               <span style={{
-                fontSize: '19px',
+                fontSize: '20px',
                 fontFamily: 'var(--font-head)',
-                fontWeight: 700,
-                lineHeight: 1.2,
-                color: isSelected ? 'var(--teal)' : isPast ? 'var(--muted)' : 'var(--text)',
+                fontWeight: 800,
+                lineHeight: 1.15,
+                color: isSelected ? '#000' : isPast ? 'rgba(255,255,255,0.25)' : isToday ? 'var(--teal)' : 'var(--text)',
               }}>
                 {day.getDate()}
               </span>
-              {isToday && (
+              {/* Today dot (only when not selected) */}
+              {isToday && !isSelected && (
                 <div style={{
                   width: '4px', height: '4px', borderRadius: '50%',
-                  background: 'var(--teal)', marginTop: '2px',
+                  background: 'var(--teal)',
                 }} />
               )}
+              {/* Spacer when no dot */}
+              {(!isToday || isSelected) && <div style={{ height: '4px' }} />}
             </button>
           )
         })}

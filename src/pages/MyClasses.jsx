@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -31,92 +31,127 @@ function ReservationCard({ reservation, onCancel, cancelling }) {
   const sportColor = SPORT_COLORS[cls.sports?.slug] ?? 'var(--teal)'
   const cancelable = canCancel(cls.starts_at) && !isPast && !cls.is_cancelled
 
+  const statusConfig = cls.is_cancelled
+    ? { label: 'Cancelada', bg: 'rgba(224,85,85,0.12)', color: 'var(--danger)' }
+    : isPast
+      ? { label: 'Finalizada', bg: 'rgba(255,255,255,0.05)', color: 'var(--muted)' }
+      : { label: 'Confirmada', bg: 'rgba(10,191,191,0.12)', color: 'var(--teal)' }
+
   return (
     <div style={{
       background: 'var(--surface)',
-      border: `1px solid ${isPast || cls.is_cancelled ? 'var(--border)' : sportColor + '33'}`,
       borderRadius: '16px',
-      padding: '16px',
-      opacity: isPast || cls.is_cancelled ? 0.6 : 1,
+      overflow: 'hidden',
+      border: `1.5px solid ${isPast || cls.is_cancelled ? 'rgba(255,255,255,0.04)' : sportColor + '30'}`,
+      opacity: isPast || cls.is_cancelled ? 0.65 : 1,
     }}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
+      {/* Sport accent bar */}
+      <div style={{ height: '3px', background: sportColor }} />
+
+      <div style={{ padding: '14px 16px' }}>
+        {/* Top: sport + status */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{
-            fontSize: '10px', fontWeight: 600, letterSpacing: '1px',
+            fontSize: '10px', fontWeight: 700, letterSpacing: '1.2px',
             textTransform: 'uppercase', color: sportColor,
           }}>
             {cls.sports?.name}
           </span>
-          <p style={{
-            fontFamily: 'var(--font-head)', fontSize: '20px', fontWeight: 800,
-            color: 'var(--text)', letterSpacing: '0.5px', lineHeight: 1.1,
-            marginTop: '2px',
+          <span style={{
+            fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px',
+            background: statusConfig.bg, color: statusConfig.color,
           }}>
-            {cls.title}
-          </p>
-          <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '4px', textTransform: 'capitalize' }}>
-            {formatDayLong(cls.starts_at)} · {formatTime(cls.starts_at)} – {formatTime(cls.ends_at)}
-          </p>
+            {statusConfig.label}
+          </span>
+        </div>
+
+        {/* Title */}
+        <p style={{
+          fontFamily: 'var(--font-head)', fontSize: '20px', fontWeight: 800,
+          color: 'var(--text)', letterSpacing: '0.5px', lineHeight: 1.1,
+          marginBottom: '8px',
+        }}>
+          {cls.title}
+        </p>
+
+        {/* Date + time row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: '12px', color: 'var(--muted)', textTransform: 'capitalize',
+          }}>
+            {formatDayLong(cls.starts_at)}
+          </span>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center',
+            fontSize: '12px', color: 'var(--text)',
+            background: 'var(--surface2)', padding: '3px 8px', borderRadius: '6px',
+          }}>
+            {formatTime(cls.starts_at)} – {formatTime(cls.ends_at)}
+          </span>
           {cls.instructor && (
-            <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-              {cls.instructor}
-            </p>
+            <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{cls.instructor}</span>
           )}
         </div>
 
-        <div className="flex flex-col items-end gap-2 shrink-0">
-          {cls.is_cancelled ? (
-            <span style={{
-              fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px',
-              background: 'rgba(224,85,85,0.1)', color: 'var(--danger)',
-            }}>
-              Cancelada
-            </span>
-          ) : isPast ? (
-            <span style={{
-              fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px',
-              background: 'var(--surface2)', color: 'var(--muted)',
-            }}>
-              Finalizada
-            </span>
-          ) : (
-            <span style={{
-              fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '20px',
-              background: 'var(--teal-glow)', color: 'var(--teal)',
-            }}>
-              Confirmada
-            </span>
-          )}
-
-          {cancelable && (
-            <button
-              onClick={() => onCancel(reservation.id)}
-              disabled={cancelling === reservation.id}
-              style={{
-                fontSize: '12px', padding: '5px 12px', borderRadius: '8px',
-                border: '1px solid var(--danger)', color: 'var(--danger)',
-                background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              {cancelling === reservation.id ? 'Cancelando…' : 'Cancelar'}
-            </button>
-          )}
-        </div>
+        {/* Cancel button */}
+        {cancelable && (
+          <button
+            onClick={() => onCancel(reservation.id)}
+            disabled={cancelling === reservation.id}
+            style={{
+              marginTop: '12px',
+              width: '100%',
+              padding: '9px',
+              borderRadius: '10px',
+              border: '1px solid rgba(224,85,85,0.4)',
+              color: 'var(--danger)',
+              background: 'rgba(224,85,85,0.06)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: cancelling === reservation.id ? 'default' : 'pointer',
+              letterSpacing: '0.3px',
+            }}
+          >
+            {cancelling === reservation.id ? 'Cancelando…' : 'Cancelar reserva'}
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
+function SectionLabel({ children }) {
+  return (
+    <p style={{
+      fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--muted)',
+      textTransform: 'uppercase', marginBottom: '10px', paddingLeft: '2px',
+    }}>
+      {children}
+    </p>
+  )
+}
+
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-16" style={{ color: 'var(--muted)' }}>
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-3" style={{ opacity: 0.4 }}>
-        <rect x="3" y="4" width="18" height="18" rx="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-      <p style={{ fontSize: '14px' }}>No tienes reservas</p>
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', padding: '64px 24px', color: 'var(--muted)',
+      textAlign: 'center',
+    }}>
+      <div style={{
+        width: '64px', height: '64px', borderRadius: '20px',
+        background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: '16px',
+      }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}>
+          <rect x="3" y="4" width="18" height="18" rx="3"/>
+          <polyline points="8,9 10.5,11.5 15,7"/>
+          <line x1="8" y1="15" x2="16" y2="15"/>
+        </svg>
+      </div>
+      <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)', marginBottom: '4px' }}>Sin reservas</p>
+      <p style={{ fontSize: '13px' }}>Tus próximas clases aparecerán aquí</p>
     </div>
   )
 }
@@ -165,7 +200,10 @@ export default function MyClasses() {
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{
+        background: 'var(--surface)', borderBottom: '1px solid rgba(10,191,191,0.1)',
+        padding: '20px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
         <h1 style={{ fontFamily: 'var(--font-head)', fontSize: '26px', fontWeight: 800, color: 'var(--text)', letterSpacing: '1px' }}>
           MIS CLASES
         </h1>
@@ -174,16 +212,14 @@ export default function MyClasses() {
 
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
-          <div className="flex justify-center py-12">
-            <div
-              className="w-7 h-7 rounded-full border-2 border-teal"
-              style={{ borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }}
-            />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+            <div className="w-7 h-7 rounded-full border-2 border-teal"
+              style={{ borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
           </div>
         )}
 
         {isError && (
-          <div className="flex justify-center py-12">
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 16px' }}>
             <p style={{ color: 'var(--danger)', fontSize: '14px' }}>Error al cargar tus reservas.</p>
           </div>
         )}
@@ -191,30 +227,23 @@ export default function MyClasses() {
         {!isLoading && !isError && reservations.length === 0 && <EmptyState />}
 
         {!isLoading && !isError && reservations.length > 0 && (
-          <div className="p-4 flex flex-col gap-6">
+          <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
             {errorMsg && (
-              <p style={{
+              <div style={{
+                padding: '12px 16px', borderRadius: '12px',
+                background: 'rgba(224,85,85,0.1)', border: '1px solid rgba(224,85,85,0.2)',
                 fontSize: '13px', color: 'var(--danger)',
-                background: 'rgba(224,85,85,0.1)',
-                padding: '10px 14px', borderRadius: '10px', textAlign: 'center',
               }}>
                 {errorMsg}
-              </p>
+              </div>
             )}
 
             {upcoming.length > 0 && (
               <section>
-                <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '2px', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '12px' }}>
-                  Próximas
-                </p>
-                <div className="flex flex-col gap-3">
+                <SectionLabel>Próximas · {upcoming.length}</SectionLabel>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {upcoming.map((r) => (
-                    <ReservationCard
-                      key={r.id}
-                      reservation={r}
-                      onCancel={handleCancel}
-                      cancelling={cancelling}
-                    />
+                    <ReservationCard key={r.id} reservation={r} onCancel={handleCancel} cancelling={cancelling} />
                   ))}
                 </div>
               </section>
@@ -222,17 +251,10 @@ export default function MyClasses() {
 
             {past.length > 0 && (
               <section>
-                <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '2px', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '12px' }}>
-                  Historial
-                </p>
-                <div className="flex flex-col gap-3">
+                <SectionLabel>Historial</SectionLabel>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {past.map((r) => (
-                    <ReservationCard
-                      key={r.id}
-                      reservation={r}
-                      onCancel={handleCancel}
-                      cancelling={cancelling}
-                    />
+                    <ReservationCard key={r.id} reservation={r} onCancel={handleCancel} cancelling={cancelling} />
                   ))}
                 </div>
               </section>
