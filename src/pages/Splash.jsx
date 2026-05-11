@@ -20,34 +20,21 @@ export default function Splash() {
       style={{ position: 'relative' }}
     >
       <div style={{ animation: 'fade-up 0.6s ease forwards', textAlign: 'center' }}>
-        <h1 style={{
-          fontFamily: 'var(--font-head)',
-          fontSize: 'clamp(56px, 18vw, 80px)',
-          fontWeight: 900,
-          color: 'var(--teal)',
-          letterSpacing: '6px',
-          lineHeight: 1,
-          textTransform: 'uppercase',
-        }}>
-          Sport
-        </h1>
-        <h1 style={{
-          fontFamily: 'var(--font-head)',
-          fontSize: 'clamp(56px, 18vw, 80px)',
-          fontWeight: 900,
-          color: 'var(--text)',
-          letterSpacing: '6px',
-          lineHeight: 1,
-          textTransform: 'uppercase',
-        }}>
-          Miraflores
-        </h1>
+        <img
+          src="/logo.png"
+          alt="Sport Miraflores"
+          style={{
+            width: 'clamp(200px, 65vw, 280px)',
+            margin: '0 auto',
+            filter: 'drop-shadow(0 0 28px rgba(10,191,191,0.25))',
+          }}
+        />
         <p style={{
           fontFamily: 'var(--font-body)',
           color: 'var(--muted)',
           fontSize: '12px',
           letterSpacing: '4px',
-          marginTop: '10px',
+          marginTop: '16px',
           textTransform: 'uppercase',
         }}>
           CrossFit · Hyrox

@@ -72,17 +72,12 @@ export default function Login() {
   return (
     <div className="flex flex-col items-center justify-center h-full bg-canvas px-6">
       <div className="mb-10 text-center" style={{ animation: 'fade-up 0.5s ease forwards' }}>
-        <h1 style={{
-          fontFamily: 'var(--font-head)',
-          fontSize: 'clamp(44px, 13vw, 60px)',
-          fontWeight: 900,
-          lineHeight: 1,
-          letterSpacing: '4px',
-        }}>
-          <span style={{ color: 'var(--teal)' }}>SPORT </span>
-          <span style={{ color: 'var(--text)' }}>MIRAFLORES</span>
-        </h1>
-        <p style={{ color: 'var(--muted)', fontSize: '11px', letterSpacing: '3px', marginTop: '6px' }}>
+        <img
+          src="/logo.png"
+          alt="Sport Miraflores"
+          style={{ width: 'clamp(160px, 52vw, 210px)', margin: '0 auto' }}
+        />
+        <p style={{ color: 'var(--muted)', fontSize: '11px', letterSpacing: '3px', marginTop: '8px' }}>
           CROSSFIT · HYROX
         </p>
       </div>

@@ -62,9 +62,7 @@ export default function Bookings() {
           <h1 style={{ fontFamily: 'var(--font-head)', fontSize: '26px', fontWeight: 800, color: 'var(--text)', letterSpacing: '1px' }}>
             RESERVAS
           </h1>
-          <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-            {profile?.full_name?.split(' ')[0]}
-          </span>
+          <img src="/logo.png" alt="Sport Miraflores" style={{ height: '38px', opacity: 0.75 }} />
         </div>
 
         {/* Bono status */}

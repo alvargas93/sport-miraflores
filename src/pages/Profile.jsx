@@ -168,10 +168,11 @@ export default function Profile() {
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 20px 16px' }}>
+      <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '20px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 style={{ fontFamily: 'var(--font-head)', fontSize: '26px', fontWeight: 800, color: 'var(--text)', letterSpacing: '1px' }}>
           PERFIL
         </h1>
+        <img src="/logo.png" alt="Sport Miraflores" style={{ height: '38px', opacity: 0.75 }} />
       </div>
 
       <div className="flex-1 overflow-y-auto">
