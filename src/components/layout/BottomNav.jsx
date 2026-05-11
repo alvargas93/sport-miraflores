@@ -73,63 +73,60 @@ export default function BottomNav() {
 
   return (
     <nav
+      className="fixed bottom-0 left-0 right-0 flex"
       style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0,
-        display: 'flex',
         background: 'var(--surface2)',
         borderTop: '1px solid rgba(10,191,191,0.1)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 50,
+        position: 'relative',
       }}
     >
-      {/* Sliding top indicator */}
+      {/* Sliding indicator */}
       {activeIndex >= 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: `${activeIndex * tabW}%`,
-            width: `${tabW}%`,
+        <span style={{
+          position: 'absolute',
+          top: 0,
+          left: `${activeIndex * tabW}%`,
+          width: `${tabW}%`,
+          height: '2.5px',
+          display: 'flex',
+          justifyContent: 'center',
+          transition: 'left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}>
+          <span style={{
+            width: '32px',
             height: '2.5px',
-            display: 'flex',
-            justifyContent: 'center',
-            transition: 'left 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            pointerEvents: 'none',
-          }}
-        >
-          <div style={{
-            width: '32px', height: '2.5px',
             borderRadius: '0 0 4px 4px',
             background: 'var(--teal)',
-            boxShadow: '0 0 10px rgba(10,191,191,0.7)',
+            boxShadow: '0 0 8px rgba(10,191,191,0.6)',
           }} />
-        </div>
+        </span>
       )}
 
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
           to={tab.to}
+          className="flex flex-col items-center justify-center flex-1 py-2"
           style={({ isActive }) => ({
-            display: 'flex', flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', flex: 1, paddingTop: '8px', paddingBottom: '8px',
             color: isActive ? 'var(--teal)' : 'var(--muted)',
-            fontSize: '10px', letterSpacing: '0.3px',
-            gap: '3px', textDecoration: 'none',
+            fontSize: '10px',
+            letterSpacing: '0.3px',
+            gap: '4px',
+            textDecoration: 'none',
           })}
         >
           {({ isActive }) => (
             <>
-              <div
-                key={isActive ? 'on' : 'off'}
-                style={{
-                  padding: '5px 7px',
-                  borderRadius: '12px',
-                  background: isActive ? 'rgba(10,191,191,0.12)' : 'transparent',
-                  animation: isActive ? 'nav-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
-                  transition: 'background 0.2s',
-                }}
-              >
+              <div style={{
+                padding: '4px 6px',
+                borderRadius: '10px',
+                background: isActive ? 'rgba(10,191,191,0.12)' : 'transparent',
+                transition: 'background 0.2s',
+              }}>
                 <tab.Icon active={isActive} />
               </div>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: isActive ? 600 : 400 }}>
