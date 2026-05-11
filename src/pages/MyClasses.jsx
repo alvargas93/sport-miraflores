@@ -159,7 +159,7 @@ function EmptyState() {
 export default function MyClasses() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
-  const { data: reservations = [], isLoading, isError } = useMyReservations(profile?.id)
+  const { data: reservations = [], isLoading, isError, error } = useMyReservations(profile?.id)
   const [cancelling, setCancelling] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -219,8 +219,11 @@ export default function MyClasses() {
         )}
 
         {isError && (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 16px', gap: '6px' }}>
             <p style={{ color: 'var(--danger)', fontSize: '14px' }}>Error al cargar tus reservas.</p>
+            {error?.message && (
+              <p style={{ color: 'var(--muted)', fontSize: '12px', textAlign: 'center' }}>{error.message}</p>
+            )}
           </div>
         )}
 

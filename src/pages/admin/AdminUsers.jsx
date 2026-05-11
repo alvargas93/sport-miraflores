@@ -39,18 +39,35 @@ export default function AdminUsers() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: usersRaw = [], isLoading, isError } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, role, is_active, user_sports(sport_id, sports(name, slug))')
+        .select('id, email, full_name, role, is_active')
         .order('full_name')
       if (error) throw error
-      return data
+      return data ?? []
     },
     staleTime: 1000 * 30,
   })
+
+  const { data: allUserSports = [] } = useQuery({
+    queryKey: ['admin-all-user-sports'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_sports')
+        .select('user_id, sport_id, sports(name, slug)')
+      if (error) throw error
+      return data ?? []
+    },
+    staleTime: 1000 * 60,
+  })
+
+  const users = usersRaw.map((u) => ({
+    ...u,
+    user_sports: allUserSports.filter((us) => us.user_id === u.id),
+  }))
 
   const toggleMutation = useMutation({
     mutationFn: async ({ id, is_active }) => {
@@ -154,6 +171,10 @@ export default function AdminUsers() {
         <div className="flex justify-center py-12">
           <div className="w-7 h-7 rounded-full border-2 border-teal" style={{ borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
         </div>
+      ) : isError ? (
+        <p style={{ textAlign: 'center', color: 'var(--danger)', padding: '40px', fontSize: '14px' }}>
+          Error al cargar usuarios. Comprueba las políticas RLS en Supabase.
+        </p>
       ) : (
         <div>
           {filtered.map((user) => {
