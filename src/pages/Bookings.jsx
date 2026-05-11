@@ -58,7 +58,7 @@ export default function Bookings() {
     <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
       {/* Header */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div style={{ padding: '20px 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h1 style={{ fontFamily: 'var(--font-head)', fontSize: '26px', fontWeight: 800, color: 'var(--text)', letterSpacing: '1px' }}>
             RESERVAS
           </h1>
