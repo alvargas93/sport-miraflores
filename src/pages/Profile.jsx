@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import Cropper from 'react-easy-crop'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -10,7 +11,22 @@ const SPORT_COLORS = {
   hyrox: '#e8a020',
 }
 
-function Avatar({ url, name, onUpload, uploading }) {
+async function getCroppedImg(imageSrc, pixelCrop) {
+  const image = await new Promise((resolve, reject) => {
+    const img = new Image()
+    img.addEventListener('load', () => resolve(img))
+    img.addEventListener('error', reject)
+    img.src = imageSrc
+  })
+  const canvas = document.createElement('canvas')
+  canvas.width = 400
+  canvas.height = 400
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, 400, 400)
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.92))
+}
+
+function Avatar({ url, name, onFileSelect, uploading }) {
   const inputRef = useRef(null)
   const initials = name
     ? name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
@@ -60,10 +76,17 @@ function Avatar({ url, name, onUpload, uploading }) {
       >
         Cambiar foto
       </button>
-      <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-        const file = e.target.files?.[0]
-        if (file) onUpload(file)
-      }} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) onFileSelect(file)
+          e.target.value = ''
+        }}
+      />
     </div>
   )
 }
@@ -109,9 +132,16 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
 
+  const [cropSrc, setCropSrc] = useState(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
+
   useEffect(() => {
     if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
   }, [profile?.avatar_url])
+
+  const onCropComplete = useCallback((_, pixels) => setCroppedAreaPixels(pixels), [])
 
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwNew, setPwNew] = useState('')
@@ -134,15 +164,34 @@ export default function Profile() {
     }
   }
 
-  async function handleAvatarUpload(file) {
+  function handleFileSelect(file) {
+    const reader = new FileReader()
+    reader.onload = () => {
+      setCropSrc(reader.result)
+      setCrop({ x: 0, y: 0 })
+      setZoom(1)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  async function handleCropConfirm() {
+    try {
+      const blob = await getCroppedImg(cropSrc, croppedAreaPixels)
+      setCropSrc(null)
+      await handleAvatarUpload(blob)
+    } catch {
+      setUploadError('Error al recortar la imagen.')
+    }
+  }
+
+  async function handleAvatarUpload(blob) {
     setUploading(true)
     setUploadError('')
     try {
-      const ext = file.name.split('.').pop().toLowerCase()
-      const path = `${profile.id}/avatar.${ext}`
+      const path = `${profile.id}/avatar.jpg`
       const { error: storageError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true, contentType: file.type })
+        .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
       if (storageError) throw new Error('Storage: ' + storageError.message)
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
       const url = `${urlData.publicUrl}?t=${Date.now()}`
@@ -217,7 +266,7 @@ export default function Profile() {
             borderRadius: '20px', padding: '28px 16px 20px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
           }}>
-            <Avatar url={avatarUrl} name={profile?.full_name} onUpload={handleAvatarUpload} uploading={uploading} />
+            <Avatar url={avatarUrl} name={profile?.full_name} onFileSelect={handleFileSelect} uploading={uploading} />
             {uploadError && (
               <p style={{ fontSize: '12px', color: 'var(--danger)', textAlign: 'center', padding: '0 8px' }}>
                 {uploadError}
@@ -489,6 +538,72 @@ export default function Profile() {
           <div style={{ height: '8px' }} />
         </div>
       </div>
+
+      {/* Crop modal */}
+      {cropSrc && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 200 }} />
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 201,
+            display: 'flex', flexDirection: 'column',
+          }}>
+            {/* Crop area */}
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Cropper
+                image={cropSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+
+            {/* Controls */}
+            <div style={{
+              background: 'var(--surface)',
+              borderTop: '1px solid var(--border)',
+              padding: '16px 20px calc(20px + env(safe-area-inset-bottom))',
+              display: 'flex', flexDirection: 'column', gap: '14px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+                </svg>
+                <input
+                  type="range"
+                  min={1} max={3} step={0.01}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  style={{ flex: 1, accentColor: 'var(--teal)' }}
+                />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  <line x1="8" y1="11" x2="14" y2="11"/>
+                </svg>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setCropSrc(null)}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--muted)', cursor: 'pointer', fontSize: '14px' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCropConfirm}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', background: 'var(--teal)', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px' }}
+                >
+                  Usar foto
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
