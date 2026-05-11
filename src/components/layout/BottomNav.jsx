@@ -76,9 +76,7 @@ export default function BottomNav() {
       style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         display: 'flex',
-        background: 'rgba(22,22,22,0.82)',
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
+        background: 'var(--surface2)',
         borderTop: '1px solid rgba(10,191,191,0.1)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 50,

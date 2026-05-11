@@ -125,9 +125,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
         onClick={onClose}
         style={{
           position: 'fixed', inset: 0,
-          background: 'rgba(0,0,0,0.45)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.65)',
           zIndex: 100,
           animation: 'fade-up 0.25s ease',
         }}
