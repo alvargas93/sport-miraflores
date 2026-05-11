@@ -26,13 +26,25 @@ export default function AdminUsers() {
   const [createError, setCreateError] = useState('')
   const [createLoading, setCreateLoading] = useState(false)
   const isGeneralAdmin = profile?.role === 'general_admin'
+  const isSportAdmin = profile?.role === 'sport_admin'
+
+  const { data: adminSportIds = [] } = useQuery({
+    queryKey: ['my-sport-ids', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('user_sports').select('sport_id').eq('user_id', profile.id)
+      if (error) throw error
+      return (data ?? []).map((us) => us.sport_id)
+    },
+    enabled: isSportAdmin,
+    staleTime: 1000 * 60 * 5,
+  })
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, role, is_active, user_sports(sports(name, slug))')
+        .select('id, email, full_name, role, is_active, user_sports(sport_id, sports(name, slug))')
         .order('full_name')
       if (error) throw error
       return data
@@ -48,6 +60,12 @@ export default function AdminUsers() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
   })
 
+  function canEditUser(user) {
+    if (isGeneralAdmin) return user.role !== 'general_admin'
+    if (isSportAdmin) return (user.user_sports ?? []).some((us) => adminSportIds.includes(us.sport_id))
+    return false
+  }
+
   async function handleCreateUser(e) {
     e.preventDefault()
     setCreateError('')
@@ -57,7 +75,6 @@ export default function AdminUsers() {
     }
     setCreateLoading(true)
     try {
-      // Cliente temporal aislado para no sobreescribir la sesión del admin
       const tempClient = createClient(
         import.meta.env.VITE_SUPABASE_URL,
         import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -87,7 +104,7 @@ export default function AdminUsers() {
         id: authData.user.id,
         email: createForm.email.trim().toLowerCase(),
         full_name: createForm.full_name.trim(),
-        role: createForm.role,
+        role: isGeneralAdmin ? createForm.role : 'user',
         is_active: true,
       })
 
@@ -123,7 +140,7 @@ export default function AdminUsers() {
           className="input-field"
           style={{ flex: 1 }}
         />
-        {isGeneralAdmin && (
+        {(isGeneralAdmin || isSportAdmin) && (
           <button
             onClick={() => { setShowCreate(true); setCreateForm(EMPTY_FORM); setCreateError('') }}
             style={{ padding: '10px 16px', borderRadius: '10px', background: 'var(--teal)', color: '#000', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}
@@ -142,6 +159,7 @@ export default function AdminUsers() {
           {filtered.map((user) => {
             const initials = user.full_name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
             const sports = (user.user_sports ?? []).map((us) => us.sports).filter(Boolean)
+            const editable = canEditUser(user)
 
             return (
               <div
@@ -183,7 +201,7 @@ export default function AdminUsers() {
                   </div>
                 </div>
 
-                {isGeneralAdmin && user.role !== 'general_admin' && (
+                {editable && user.role !== 'general_admin' && (
                   <button
                     onClick={() => toggleMutation.mutate({ id: user.id, is_active: !user.is_active })}
                     disabled={toggleMutation.isPending}
@@ -260,15 +278,17 @@ export default function AdminUsers() {
                 autoComplete="new-password"
               />
 
-              <select
-                value={createForm.role}
-                onChange={(e) => setCreateForm((f) => ({ ...f, role: e.target.value }))}
-                className="input-field"
-              >
-                {ROLE_OPTIONS.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
+              {isGeneralAdmin && (
+                <select
+                  value={createForm.role}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, role: e.target.value }))}
+                  className="input-field"
+                >
+                  {ROLE_OPTIONS.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              )}
 
               {createError && (
                 <p style={{ fontSize: '13px', color: 'var(--danger)', background: 'rgba(224,85,85,0.1)', padding: '10px 12px', borderRadius: '10px' }}>

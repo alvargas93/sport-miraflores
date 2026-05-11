@@ -24,6 +24,18 @@ export default function AdminUserDetail() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
   const isGeneralAdmin = profile?.role === 'general_admin'
+  const isSportAdmin = profile?.role === 'sport_admin'
+
+  const { data: adminSportIds = [] } = useQuery({
+    queryKey: ['my-sport-ids', profile?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('user_sports').select('sport_id').eq('user_id', profile.id)
+      if (error) throw error
+      return (data ?? []).map((us) => us.sport_id)
+    },
+    enabled: isSportAdmin,
+    staleTime: 1000 * 60 * 5,
+  })
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['admin-user', id],
@@ -76,6 +88,14 @@ export default function AdminUserDetail() {
       return data ?? []
     },
   })
+
+  // canEdit: sport_admin puede editar si comparte al menos un deporte con el usuario
+  const canEdit = isGeneralAdmin || (isSportAdmin && adminSportIds.some((sid) => userSportIds.includes(sid)))
+
+  // canToggleSport: general_admin puede todos; sport_admin solo sus deportes
+  function canToggleSport(sport) {
+    return isGeneralAdmin || (isSportAdmin && adminSportIds.includes(sport.id))
+  }
 
   const sportMutation = useMutation({
     mutationFn: async ({ sportId, add }) => {
@@ -174,7 +194,7 @@ export default function AdminUserDetail() {
             </p>
             <p style={{ fontSize: '12px', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
           </div>
-          {isGeneralAdmin && user.role !== 'general_admin' && (
+          {canEdit && user.role !== 'general_admin' && (
             <button
               onClick={() => activeMutation.mutate(!user.is_active)}
               disabled={activeMutation.isPending}
@@ -198,6 +218,22 @@ export default function AdminUserDetail() {
             {allSports.map((sport) => {
               const assigned = userSportIds.includes(sport.id)
               const color = SPORT_COLORS[sport.slug] ?? 'var(--teal)'
+              const togglable = canToggleSport(sport)
+
+              if (!togglable) {
+                if (!assigned) return null
+                return (
+                  <span key={sport.id} style={{
+                    padding: '8px 18px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+                    border: `1px solid ${color}`,
+                    background: color + '33',
+                    color,
+                  }}>
+                    {sport.name} ✓
+                  </span>
+                )
+              }
+
               return (
                 <button
                   key={sport.id}
@@ -218,71 +254,74 @@ export default function AdminUserDetail() {
           </div>
         </Section>
 
-        {/* Recurring bono */}
-        <Section title="Bono recurrente">
-          <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {user.recurring_bono_id ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--teal-glow)', border: '1px solid var(--border)', borderRadius: '10px' }}>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--teal)' }}>
-                      {bonoCatalog.find((b) => b.id === user.recurring_bono_id)?.name ?? '…'}
-                    </p>
-                    <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '1px' }}>Se renueva automáticamente cada mes</p>
-                  </div>
-                  <button
-                    onClick={() => recurringMutation.mutate(null)}
-                    disabled={recurringMutation.isPending}
-                    style={{ padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: '1px solid var(--danger)', color: 'var(--danger)', background: 'transparent', cursor: 'pointer', flexShrink: 0 }}
-                  >
-                    Quitar
-                  </button>
-                </div>
-                <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Cambiar tipo de bono:</p>
-              </>
-            ) : (
-              <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Sin bono recurrente asignado.</p>
-            )}
-            <select value={selectedBonoId} onChange={(e) => setSelectedBonoId(e.target.value)} className="input-field">
-              <option value="">Selecciona tipo de bono...</option>
-              {bonoCatalog.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}{b.max_classes ? ` (${b.max_classes} clases)` : ' (ilimitado)'}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={() => recurringMutation.mutate(selectedBonoId)}
-              disabled={!selectedBonoId || recurringMutation.isPending}
-              className="btn-primary"
-              style={{ opacity: !selectedBonoId ? 0.5 : 1 }}
-            >
-              {recurringMutation.isPending ? 'Guardando…' : user.recurring_bono_id ? 'CAMBIAR BONO' : 'ASIGNAR BONO RECURRENTE'}
-            </button>
-            {bonoSuccess && <p style={{ fontSize: '12px', color: 'var(--success)', textAlign: 'center' }}>Guardado correctamente.</p>}
-            {bonoError && <p style={{ fontSize: '12px', color: 'var(--danger)', textAlign: 'center' }}>{bonoError}</p>}
-          </div>
-        </Section>
+        {/* Bono y historial: solo si el admin puede editar al usuario */}
+        {canEdit && (
+          <>
+            <Section title="Bono recurrente">
+              <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {user.recurring_bono_id ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--teal-glow)', border: '1px solid var(--border)', borderRadius: '10px' }}>
+                      <div>
+                        <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--teal)' }}>
+                          {bonoCatalog.find((b) => b.id === user.recurring_bono_id)?.name ?? '…'}
+                        </p>
+                        <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '1px' }}>Se renueva automáticamente cada mes</p>
+                      </div>
+                      <button
+                        onClick={() => recurringMutation.mutate(null)}
+                        disabled={recurringMutation.isPending}
+                        style={{ padding: '5px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: '1px solid var(--danger)', color: 'var(--danger)', background: 'transparent', cursor: 'pointer', flexShrink: 0 }}
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Cambiar tipo de bono:</p>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Sin bono recurrente asignado.</p>
+                )}
+                <select value={selectedBonoId} onChange={(e) => setSelectedBonoId(e.target.value)} className="input-field">
+                  <option value="">Selecciona tipo de bono...</option>
+                  {bonoCatalog.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}{b.max_classes ? ` (${b.max_classes} clases)` : ' (ilimitado)'}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => recurringMutation.mutate(selectedBonoId)}
+                  disabled={!selectedBonoId || recurringMutation.isPending}
+                  className="btn-primary"
+                  style={{ opacity: !selectedBonoId ? 0.5 : 1 }}
+                >
+                  {recurringMutation.isPending ? 'Guardando…' : user.recurring_bono_id ? 'CAMBIAR BONO' : 'ASIGNAR BONO RECURRENTE'}
+                </button>
+                {bonoSuccess && <p style={{ fontSize: '12px', color: 'var(--success)', textAlign: 'center' }}>Guardado correctamente.</p>}
+                {bonoError && <p style={{ fontSize: '12px', color: 'var(--danger)', textAlign: 'center' }}>{bonoError}</p>}
+              </div>
+            </Section>
 
-        {/* Bono history */}
-        {bonoHistory.length > 0 && (
-          <Section title="Historial de bonos">
-            {bonoHistory.map((ub) => {
-              const monthLabel = formatDate(ub.month + 'T12:00:00', { month: 'long', year: 'numeric' })
-              const max = ub.bonos?.max_classes
-              return (
-                <div key={ub.id} style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <p style={{ fontSize: '13px', color: 'var(--text)', textTransform: 'capitalize' }}>{monthLabel}</p>
-                    <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '1px' }}>{ub.bonos?.name}</p>
-                  </div>
-                  <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-                    {max === null ? `${ub.classes_used} usadas` : `${ub.classes_used}/${max}`}
-                  </span>
-                </div>
-              )
-            })}
-          </Section>
+            {bonoHistory.length > 0 && (
+              <Section title="Historial de bonos">
+                {bonoHistory.map((ub) => {
+                  const monthLabel = formatDate(ub.month + 'T12:00:00', { month: 'long', year: 'numeric' })
+                  const max = ub.bonos?.max_classes
+                  return (
+                    <div key={ub.id} style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <p style={{ fontSize: '13px', color: 'var(--text)', textTransform: 'capitalize' }}>{monthLabel}</p>
+                        <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '1px' }}>{ub.bonos?.name}</p>
+                      </div>
+                      <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                        {max === null ? `${ub.classes_used} usadas` : `${ub.classes_used}/${max}`}
+                      </span>
+                    </div>
+                  )
+                })}
+              </Section>
+            )}
+          </>
         )}
       </div>
     </div>
