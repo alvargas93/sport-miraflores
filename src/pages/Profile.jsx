@@ -146,8 +146,12 @@ export default function Profile() {
       if (storageError) throw new Error('Storage: ' + storageError.message)
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
       const url = `${urlData.publicUrl}?t=${Date.now()}`
-      const { error: dbError } = await supabase.from('users').update({ avatar_url: url }).eq('id', profile.id)
+      const { error: dbError, count } = await supabase
+        .from('users')
+        .update({ avatar_url: url }, { count: 'exact' })
+        .eq('id', profile.id)
       if (dbError) throw new Error('DB: ' + dbError.message)
+      if (count === 0) throw new Error('Sin permiso para guardar la foto. Contacta con el administrador.')
       setAvatarUrl(url)
       refreshProfile(profile.id)
     } catch (err) {
