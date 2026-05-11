@@ -128,6 +128,23 @@ export default function AdminUserDetail() {
   const [bonoSuccess, setBonoSuccess] = useState(false)
   const [bonoError, setBonoError] = useState('')
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('delete_user_account', { p_user_id: id })
+      if (error) throw error
+      if (!data.success) throw new Error(data.error)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      navigate('/admin/users')
+    },
+    onError: (err) => setDeleteError(err.message),
+  })
+
   const recurringMutation = useMutation({
     mutationFn: async (newBonoId) => {
       const { error: userError } = await supabase
@@ -210,6 +227,36 @@ export default function AdminUserDetail() {
           )}
         </div>
       </div>
+
+      {/* Delete confirmation sheet */}
+      {showDeleteConfirm && (
+        <>
+          <div onClick={() => setShowDeleteConfirm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100 }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--surface)', borderRadius: '20px 20px 0 0', borderTop: '1px solid var(--border)', zIndex: 101, padding: '20px 20px calc(24px + env(safe-area-inset-bottom))' }}>
+            <p style={{ fontFamily: 'var(--font-head)', fontSize: '20px', fontWeight: 800, color: 'var(--danger)', marginBottom: '8px' }}>
+              Eliminar usuario
+            </p>
+            <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '20px' }}>
+              Se eliminarán todos los datos de <strong style={{ color: 'var(--text)' }}>{user.full_name}</strong> de forma permanente: reservas, bonos y acceso a la app. Esta acción no se puede deshacer.
+            </p>
+            {deleteError && (
+              <p style={{ fontSize: '13px', color: 'var(--danger)', marginBottom: '12px' }}>{deleteError}</p>
+            )}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => { setShowDeleteConfirm(false); setDeleteError('') }} style={{ flex: 1, padding: '12px', borderRadius: '10px', background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--muted)', cursor: 'pointer', fontSize: '14px' }}>
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                style={{ flex: 1, padding: '12px', borderRadius: '10px', background: 'var(--danger)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '14px', opacity: deleteMutation.isPending ? 0.7 : 1 }}
+              >
+                {deleteMutation.isPending ? 'Eliminando…' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* Sports */}
@@ -322,6 +369,21 @@ export default function AdminUserDetail() {
               </Section>
             )}
           </>
+        )}
+
+        {/* Eliminar usuario */}
+        {canEdit && user.role !== 'general_admin' && (
+          <button
+            onClick={() => { setShowDeleteConfirm(true); setDeleteError('') }}
+            style={{
+              width: '100%', padding: '13px', borderRadius: '12px',
+              background: 'rgba(224,85,85,0.08)', border: '1px solid rgba(224,85,85,0.3)',
+              color: 'var(--danger)', fontSize: '14px', fontWeight: 600,
+              cursor: 'pointer', marginTop: '4px',
+            }}
+          >
+            Eliminar usuario
+          </button>
         )}
       </div>
     </div>
