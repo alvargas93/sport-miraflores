@@ -130,7 +130,6 @@ const quickLinks = [
   { to: '/admin/users',     label: 'Usuarios',    desc: 'Gestionar socios y admins',  Icon: IconUsersMgmt,  color: '#7c6af7' },
   { to: '/admin/classes',   label: 'Clases',      desc: 'Ver y cancelar clases',       Icon: IconClasesLink, color: '#0abfbf' },
   { to: '/admin/templates', label: 'Plantillas',  desc: 'Horarios y generar mes',      Icon: IconTemplate,   color: '#e8a020' },
-  { to: '/admin/bonos',     label: 'Bonos',       desc: 'Asignar bonos mensuales',     Icon: IconBono,       color: '#2ecc8f' },
 ]
 
 export default function AdminDashboard() {
