@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../../lib/supabase'
 import { formatTime, formatDayLong } from '../../../lib/utils'
 import { useAuth } from '../../../hooks/useAuth'
@@ -48,6 +48,17 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
   const sportColor = cls ? (SPORT_COLORS[cls.sport_slug] ?? 'var(--teal)') : 'var(--teal)'
   const free = cls ? cls.max_capacity - cls.confirmed_count : 0
 
+  const { data: attendees = [] } = useQuery({
+    queryKey: ['class-attendees', cls?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_class_attendees', { p_class_id: cls.id })
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: !!cls?.id,
+    staleTime: 1000 * 30,
+  })
+
   // Lock body scroll while open
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -67,6 +78,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
       if (data.success) {
         queryClient.invalidateQueries({ queryKey: ['classes', selectedDate] })
         queryClient.invalidateQueries({ queryKey: ['bono', profile.id] })
+        queryClient.invalidateQueries({ queryKey: ['class-attendees', cls.id] })
         onClose()
       } else {
         setError(BOOK_ERRORS[data.error] ?? 'Error al reservar. Inténtalo de nuevo.')
@@ -88,6 +100,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
       if (data.success) {
         queryClient.invalidateQueries({ queryKey: ['classes', selectedDate] })
         queryClient.invalidateQueries({ queryKey: ['bono', profile.id] })
+        queryClient.invalidateQueries({ queryKey: ['class-attendees', cls.id] })
         onClose()
       } else {
         setError(CANCEL_ERRORS[data.error] ?? 'No se pudo cancelar la reserva.')
@@ -136,7 +149,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--surface3)' }} />
         </div>
 
-        <div className="px-5 pt-2">
+        <div style={{ padding: '8px 20px 0' }}>
           {/* Sport badge */}
           <span style={{
             fontSize: '11px', fontWeight: 600, letterSpacing: '1px',
@@ -194,6 +207,39 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
               transition: 'width 0.4s',
             }} />
           </div>
+
+          {/* Attendees */}
+          {attendees.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '10px' }}>
+                Apuntados · {attendees.length}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {attendees.map((a, i) => {
+                  const initials = a.full_name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+                  return (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '48px' }}>
+                      <div style={{
+                        width: '42px', height: '42px', borderRadius: '50%',
+                        background: a.avatar_url ? 'transparent' : 'var(--teal-glow)',
+                        border: '1.5px solid var(--border)',
+                        overflow: 'hidden', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'var(--font-head)', fontSize: '14px', fontWeight: 800, color: 'var(--teal)',
+                      }}>
+                        {a.avatar_url
+                          ? <img src={a.avatar_url} alt={a.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : initials}
+                      </div>
+                      <p style={{ fontSize: '9px', color: 'var(--muted)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+                        {a.full_name?.split(' ')[0]}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Bono */}
           <div className="flex items-center justify-between" style={{
