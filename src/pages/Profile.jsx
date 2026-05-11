@@ -143,6 +143,11 @@ export default function Profile() {
 
   const onCropComplete = useCallback((_, pixels) => setCroppedAreaPixels(pixels), [])
 
+  const [showNameForm, setShowNameForm] = useState(false)
+  const [nameValue, setNameValue] = useState('')
+  const [nameLoading, setNameLoading] = useState(false)
+  const [nameError, setNameError] = useState('')
+
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwNew, setPwNew] = useState('')
   const [pwConfirm, setPwConfirm] = useState('')
@@ -207,6 +212,22 @@ export default function Profile() {
       setUploadError(err.message ?? 'Error al subir la foto.')
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function handleNameSave(e) {
+    e.preventDefault()
+    const trimmed = nameValue.trim()
+    if (!trimmed) return setNameError('El nombre no puede estar vacío.')
+    setNameLoading(true)
+    setNameError('')
+    const { error } = await supabase.from('users').update({ full_name: trimmed }).eq('id', profile.id)
+    setNameLoading(false)
+    if (error) {
+      setNameError('No se pudo guardar el nombre.')
+    } else {
+      await refreshProfile(profile.id)
+      setShowNameForm(false)
     }
   }
 
@@ -367,7 +388,62 @@ export default function Profile() {
           {/* Cuenta */}
           <div>
             <SectionLabel>Cuenta</SectionLabel>
-            <InfoCard rows={[{ label: 'Email', value: profile?.email }]} />
+            <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
+              {/* Email (solo lectura) */}
+              <div style={{ padding: '13px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '13px', color: 'var(--muted)', flexShrink: 0 }}>Email</span>
+                <span style={{ fontSize: '13px', color: 'var(--text)', textAlign: 'right', wordBreak: 'break-all' }}>{profile?.email}</span>
+              </div>
+
+              {/* Nombre */}
+              <div style={{ borderTop: '1px solid var(--card-border)' }}>
+                {!showNameForm ? (
+                  <div style={{ padding: '13px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '13px', color: 'var(--muted)', flexShrink: 0 }}>Nombre</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '13px', color: 'var(--text)', textAlign: 'right' }}>{profile?.full_name}</span>
+                      <button
+                        onClick={() => { setNameValue(profile?.full_name ?? ''); setNameError(''); setShowNameForm(true) }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--teal)', padding: '2px', flexShrink: 0 }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={handleNameSave} style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <input
+                      type="text"
+                      value={nameValue}
+                      onChange={(e) => setNameValue(e.target.value)}
+                      className="input-field"
+                      autoFocus
+                      autoComplete="name"
+                    />
+                    {nameError && <p style={{ fontSize: '12px', color: 'var(--danger)' }}>{nameError}</p>}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowNameForm(false)}
+                        style={{ flex: 1, padding: '10px', borderRadius: '10px', background: 'var(--surface2)', border: '1px solid var(--card-border)', color: 'var(--muted)', cursor: 'pointer', fontSize: '13px' }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={nameLoading}
+                        style={{ flex: 1, padding: '10px', borderRadius: '10px', background: 'var(--teal)', color: '#000', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '13px' }}
+                      >
+                        {nameLoading ? 'Guardando…' : 'Guardar'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Apariencia */}
