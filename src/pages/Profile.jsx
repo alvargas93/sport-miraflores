@@ -33,11 +33,11 @@ function Avatar({ url, name, onFileSelect, uploading }) {
     : '?'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <button
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, position: 'relative' }}
       >
         <div style={{
           width: '88px', height: '88px', borderRadius: '50%',
@@ -54,7 +54,7 @@ function Avatar({ url, name, onFileSelect, uploading }) {
               {initials}
             </span>
           )}
-          {uploading && (
+          {uploading ? (
             <div style={{
               position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -62,19 +62,19 @@ function Avatar({ url, name, onFileSelect, uploading }) {
               <div className="w-5 h-5 rounded-full border-2 border-teal"
                 style={{ borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
             </div>
+          ) : (
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0,
+              height: '28px', background: 'rgba(0,0,0,0.45)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
           )}
         </div>
-      </button>
-      <button
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        style={{
-          fontSize: '12px', color: 'var(--teal)', background: 'rgba(10,191,191,0.1)',
-          border: '1px solid rgba(10,191,191,0.25)', borderRadius: '20px',
-          padding: '4px 14px', cursor: 'pointer',
-        }}
-      >
-        Cambiar foto
       </button>
       <input
         ref={inputRef}
