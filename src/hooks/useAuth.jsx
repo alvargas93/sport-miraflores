@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { initOneSignal, registerPushUser } from '../lib/onesignal'
 
 const AuthContext = createContext(null)
 
@@ -40,7 +41,6 @@ export function AuthProvider({ children }) {
       .select('*')
       .eq('id', userId)
       .single()
-    console.log('[fetchProfile]', { data, error })
     setProfile(data ?? null)
     setProfileLoaded(true)
   }
@@ -82,6 +82,23 @@ export function AuthProvider({ children }) {
     setProfile(null)
     setProfileLoaded(false)
   }
+
+  useEffect(() => {
+    if (!profile?.id) return
+    initOneSignal()
+      .then(() => registerPushUser(profile.id))
+      .then(async (playerId) => {
+        if (!playerId) return
+        await Promise.all([
+          supabase.from('users').update({ onesignal_id: playerId }).eq('id', profile.id),
+          supabase.from('push_subscriptions').upsert(
+            { user_id: profile.id, onesignal_id: playerId },
+            { onConflict: 'user_id,onesignal_id' }
+          ),
+        ])
+      })
+      .catch(() => {})
+  }, [profile?.id])
 
   const isAdmin = profile?.role === 'general_admin' || profile?.role === 'sport_admin'
   // loading es true hasta que session Y perfil estén resueltos

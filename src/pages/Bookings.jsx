@@ -8,6 +8,7 @@ import { todayStr } from '../lib/utils'
 import CalendarStrip from '../components/features/bookings/CalendarStrip'
 import ClassCard from '../components/features/bookings/ClassCard'
 import ClassModal from '../components/features/bookings/ClassModal'
+import IosBanner from '../components/features/bookings/IosBanner'
 
 function SkeletonCard() {
   return (
@@ -148,6 +149,8 @@ export default function Bookings() {
           onClose={() => setSelectedClass(null)}
         />
       )}
+
+      <IosBanner />
     </div>
   )
 }

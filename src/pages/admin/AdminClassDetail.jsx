@@ -114,7 +114,16 @@ export default function AdminClassDetail() {
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data?.user_ids?.length > 0) {
+        supabase.functions.invoke('notify-class-cancelled', {
+          body: {
+            user_ids: data.user_ids,
+            class_title: classData?.title ?? '',
+            starts_at: classData?.starts_at ?? '',
+          },
+        }).catch(() => {})
+      }
       queryClient.invalidateQueries({ queryKey: ['admin-class-detail', id] })
       queryClient.invalidateQueries({ queryKey: ['admin-classes'] })
       setConfirmCancel(false)
