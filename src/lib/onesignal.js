@@ -1,18 +1,40 @@
-import OneSignal from 'react-onesignal'
-
 let initialized = false
 
 export async function initOneSignal() {
   if (initialized) return
-  await OneSignal.init({
-    appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
-    serviceWorkerParam: { scope: '/' },
+
+  await new Promise((resolve, reject) => {
+    window.OneSignalDeferred = window.OneSignalDeferred || []
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      try {
+        await OneSignal.init({
+          appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
+          serviceWorkerParam: { scope: '/' },
+        })
+        initialized = true
+        resolve()
+      } catch (err) {
+        reject(new Error('init: ' + (err?.message ?? String(err))))
+      }
+    })
   })
-  initialized = true
 }
 
 export async function registerPushUser(userId) {
-  await OneSignal.login(userId)
-  await OneSignal.Notifications.requestPermission()
-  return OneSignal.User.PushSubscription.id ?? null
+  const OneSignal = window.OneSignal
+  if (!OneSignal) throw new Error('SDK no cargado')
+
+  try {
+    await OneSignal.login(userId)
+  } catch (err) {
+    throw new Error('login: ' + (err?.message ?? String(err)))
+  }
+
+  try {
+    await OneSignal.Notifications.requestPermission()
+  } catch (err) {
+    throw new Error('requestPermission: ' + (err?.message ?? String(err)))
+  }
+
+  return OneSignal.User?.PushSubscription?.id ?? null
 }
