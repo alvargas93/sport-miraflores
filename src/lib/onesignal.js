@@ -13,7 +13,7 @@ export async function initOneSignal() {
         initialized = true
         resolve()
       } catch (err) {
-        reject(new Error('init: ' + (err?.message ?? String(err))))
+        reject(new Error('init [' + window.location.hostname + ']: ' + (err?.message ?? String(err))))
       }
     })
   })
