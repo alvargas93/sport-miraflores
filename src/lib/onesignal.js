@@ -13,6 +13,6 @@ export async function initOneSignal() {
 
 export async function registerPushUser(userId) {
   await OneSignal.login(userId)
-  const playerId = await OneSignal.User.PushSubscription.id
-  return playerId ?? null
+  await OneSignal.Notifications.requestPermission()
+  return OneSignal.User.PushSubscription.id ?? null
 }
