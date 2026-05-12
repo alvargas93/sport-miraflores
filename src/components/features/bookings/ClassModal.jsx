@@ -44,6 +44,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
   const { data: bono } = useBono(profile?.id)
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
+  const [bookingSuccess, setBookingSuccess] = useState(false)
 
   const state = getState(cls)
   const sportColor = cls ? (SPORT_COLORS[cls.sport_slug] ?? 'var(--teal)') : 'var(--teal)'
@@ -80,7 +81,11 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
         queryClient.invalidateQueries({ queryKey: ['classes', selectedDate] })
         queryClient.invalidateQueries({ queryKey: ['bono', profile.id] })
         queryClient.invalidateQueries({ queryKey: ['class-attendees', cls.id] })
-        onClose()
+        setBookingSuccess(true)
+        setTimeout(onClose, 1300)
+      } else if (data.error === 'too_early_to_book') {
+        const opensAt = new Date(new Date(cls.starts_at).getTime() - 24 * 60 * 60 * 1000)
+        setError(`Las reservas abren el ${formatDayLong(opensAt)} a las ${formatTime(opensAt)}.`)
       } else {
         setError(BOOK_ERRORS[data.error] ?? 'Error al reservar. Inténtalo de nuevo.')
       }
@@ -312,6 +317,59 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
         </div>
       </div>
 
+      {/* Booking success overlay */}
+      {bookingSuccess && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.82)',
+          zIndex: 200,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: '16px',
+        }}>
+          {/* Expanding ring */}
+          <div style={{
+            position: 'absolute',
+            width: '100px', height: '100px',
+            borderRadius: '50%',
+            border: '2px solid rgba(10,191,191,0.7)',
+            animation: 'ring-expand 0.9s ease-out forwards',
+          }} />
+
+          {/* Checkmark circle */}
+          <div style={{
+            width: '80px', height: '80px',
+            borderRadius: '50%',
+            background: 'rgba(10,191,191,0.12)',
+            border: '2px solid var(--teal)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'success-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both',
+          }}>
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M5 13l4 4L19 7"
+                stroke="var(--teal)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  strokeDasharray: 24,
+                  animation: 'check-draw 0.38s ease 0.32s both',
+                }}
+              />
+            </svg>
+          </div>
+
+          <p style={{
+            fontFamily: 'var(--font-head)',
+            fontSize: '20px', fontWeight: 800,
+            color: 'var(--teal)', letterSpacing: '0.5px',
+            animation: 'fade-up 0.4s ease 0.5s both',
+          }}>
+            ¡Reserva confirmada!
+          </p>
+        </div>
+      )}
     </>
   )
 }

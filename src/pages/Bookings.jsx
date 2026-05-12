@@ -9,6 +9,23 @@ import CalendarStrip from '../components/features/bookings/CalendarStrip'
 import ClassCard from '../components/features/bookings/ClassCard'
 import ClassModal from '../components/features/bookings/ClassModal'
 
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton" style={{ height: '4px' }} />
+      <div style={{ padding: '14px 16px 14px', display: 'flex', flexDirection: 'column', gap: '11px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="skeleton" style={{ width: '72px', height: '11px', borderRadius: '6px' }} />
+          <div className="skeleton" style={{ width: '64px', height: '20px', borderRadius: '20px' }} />
+        </div>
+        <div className="skeleton" style={{ width: '55%', height: '20px', borderRadius: '6px' }} />
+        <div className="skeleton" style={{ width: '96px', height: '13px', borderRadius: '6px' }} />
+        <div className="skeleton" style={{ width: '100%', height: '4px', borderRadius: '2px' }} />
+      </div>
+    </div>
+  )
+}
+
 function EmptyState({ message }) {
   return (
     <div className="flex flex-col items-center justify-center py-16" style={{ color: 'var(--muted)' }}>
@@ -99,11 +116,10 @@ export default function Bookings() {
       {/* Class list */}
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
-          <div className="flex justify-center py-12">
-            <div
-              className="w-7 h-7 rounded-full border-2 border-teal"
-              style={{ borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }}
-            />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px 20px' }}>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         )}
 

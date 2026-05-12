@@ -93,6 +93,7 @@ input, textarea, select, button {
 
 .input-field:focus {
   border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(10,191,191,0.1);
 }
 
 .input-field::placeholder {
@@ -117,6 +118,11 @@ input, textarea, select, button {
 .btn-primary:hover:not(:disabled) {
   background: var(--teal-dark);
   color: #fff;
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.85;
 }
 
 .btn-primary:disabled {
@@ -185,6 +191,46 @@ input, textarea, select, button {
   70%  { transform: translateY(-10px); }
   86%  { transform: translateY(5px); }
   100% { transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+@keyframes ring-expand {
+  0%   { transform: scale(0.4); opacity: 0.8; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+@keyframes check-draw {
+  from { stroke-dashoffset: 24; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes success-pop {
+  0%   { transform: scale(0);    opacity: 0; }
+  60%  { transform: scale(1.18); opacity: 1; }
+  80%  { transform: scale(0.94); }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface2) 25%,
+    var(--surface3) 50%,
+    var(--surface2) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-card {
+  background: var(--surface);
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .class-card {

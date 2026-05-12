@@ -37,6 +37,10 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'class_not_found');
   END IF;
 
+  IF now() < v_starts_at - interval '24 hours' THEN
+    RETURN json_build_object('success', false, 'error', 'too_early_to_book');
+  END IF;
+
   IF now() >= v_starts_at - interval '1 hour' THEN
     RETURN json_build_object('success', false, 'error', 'too_late_to_book');
   END IF;

@@ -120,12 +120,16 @@ export default function BottomNav() {
         >
           {({ isActive }) => (
             <>
-              <div style={{
-                padding: '4px 6px',
-                borderRadius: '10px',
-                background: isActive ? 'rgba(10,191,191,0.12)' : 'transparent',
-                transition: 'background 0.2s',
-              }}>
+              <div
+                key={isActive ? 1 : 0}
+                style={{
+                  padding: '4px 6px',
+                  borderRadius: '10px',
+                  background: isActive ? 'rgba(10,191,191,0.12)' : 'transparent',
+                  transition: isActive ? 'none' : 'background 0.2s',
+                  animation: isActive ? 'nav-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : 'none',
+                }}
+              >
                 <tab.Icon active={isActive} />
               </div>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: isActive ? 600 : 400 }}>

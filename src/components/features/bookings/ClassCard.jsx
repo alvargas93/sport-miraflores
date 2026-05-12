@@ -45,10 +45,6 @@ export default function ClassCard({ cls, onPress, index = 0 }) {
 
   const barColor = state === 'full' ? 'var(--danger)' : state === 'booked' ? 'var(--teal)' : 'var(--success)'
 
-  const transform = pressed && !isPast
-    ? 'scale(0.97)'
-    : visible ? 'translateY(0)' : 'translateY(20px)'
-
   const transition = pressed
     ? 'transform 0.08s ease, border-color 0.15s'
     : 'opacity 0.38s ease, transform 0.42s cubic-bezier(0.34, 1.2, 0.64, 1), border-color 0.15s'
@@ -65,21 +61,38 @@ export default function ClassCard({ cls, onPress, index = 0 }) {
       style={{
         display: 'block',
         width: '100%',
-        background: state === 'booked' ? 'rgba(10,191,191,0.05)' : 'var(--surface)',
-        border: `1.5px solid ${state === 'booked' ? 'rgba(10,191,191,0.4)' : 'rgba(255,255,255,0.05)'}`,
+        position: 'relative',
+        background: state === 'booked' ? `rgba(10,191,191,0.07)` : 'var(--surface)',
+        border: `1.5px solid ${state === 'booked' ? 'rgba(10,191,191,0.45)' : 'rgba(255,255,255,0.05)'}`,
         borderRadius: '16px',
         padding: '0',
         textAlign: 'left',
         cursor: isPast ? 'default' : 'pointer',
         opacity: visible ? (isPast ? 0.5 : 1) : 0,
-        transform,
+        transform: pressed && !isPast ? 'scale(0.97)' : visible ? 'translateY(0)' : 'translateY(20px)',
+        boxShadow: pressed && !isPast ? `0 2px 12px ${sportColor}28` : 'none',
         transition,
         outline: 'none',
         overflow: 'hidden',
       }}
     >
-      {/* Sport accent bar */}
-      <div style={{ height: '3px', background: sportColor, opacity: isPast ? 0.5 : 1 }} />
+      {/* Sport accent bar — gradient horizontal */}
+      <div style={{
+        height: '4px',
+        background: `linear-gradient(90deg, ${sportColor} 0%, ${sportColor}55 100%)`,
+        opacity: isPast ? 0.4 : 1,
+      }} />
+
+      {/* Sport color gradient overlay */}
+      {!isPast && (
+        <div style={{
+          position: 'absolute',
+          top: '4px', left: 0, right: 0,
+          height: '52px',
+          background: `linear-gradient(180deg, ${sportColor}0e 0%, transparent 100%)`,
+          pointerEvents: 'none',
+        }} />
+      )}
 
       <div style={{ padding: '14px 16px 12px' }}>
         {/* Top row: sport label + state */}

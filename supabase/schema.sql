@@ -172,6 +172,10 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'class_not_found');
   END IF;
 
+  IF now() < v_starts_at - interval '24 hours' THEN
+    RETURN json_build_object('success', false, 'error', 'too_early_to_book');
+  END IF;
+
   IF now() >= v_starts_at - interval '1 hour' THEN
     RETURN json_build_object('success', false, 'error', 'too_late_to_book');
   END IF;
@@ -211,8 +215,15 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'bono_exhausted');
   END IF;
 
-  INSERT INTO reservations (class_id, user_id, status)
-  VALUES (p_class_id, p_user_id, 'confirmed');
+  INSERT INTO reservations (class_id, user_id, status, booked_at, cancelled_at, cancelled_by, cancel_reason, is_admin_override)
+  VALUES (p_class_id, p_user_id, 'confirmed', now(), NULL, NULL, NULL, false)
+  ON CONFLICT (class_id, user_id) DO UPDATE
+    SET status            = 'confirmed',
+        booked_at         = now(),
+        cancelled_at      = NULL,
+        cancelled_by      = NULL,
+        cancel_reason     = NULL,
+        is_admin_override = false;
 
   UPDATE user_bonos
   SET classes_used = classes_used + 1
