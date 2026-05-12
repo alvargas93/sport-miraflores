@@ -9,7 +9,6 @@ export async function initOneSignal() {
       try {
         await OneSignal.init({
           appId: import.meta.env.VITE_ONESIGNAL_APP_ID,
-          serviceWorkerParam: { scope: '/' },
         })
         initialized = true
         resolve()
