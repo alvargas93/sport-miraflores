@@ -160,9 +160,11 @@ export default function Profile() {
     () => (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported')
   )
   const [pushLoading, setPushLoading] = useState(false)
+  const [pushError, setPushError] = useState('')
 
   async function handleEnablePush() {
     setPushLoading(true)
+    setPushError('')
     try {
       await initOneSignal()
       const playerId = await registerPushUser(profile.id)
@@ -176,7 +178,8 @@ export default function Profile() {
           ),
         ])
       }
-    } catch {
+    } catch (err) {
+      setPushError(err?.message ?? 'Error desconocido')
       setPushStatus(Notification.permission)
     } finally {
       setPushLoading(false)
@@ -573,6 +576,11 @@ export default function Profile() {
                     </button>
                   )}
                 </div>
+                {pushError && (
+                  <p style={{ fontSize: '12px', color: 'var(--danger)', padding: '0 16px 12px' }}>
+                    Error: {pushError}
+                  </p>
+                )}
               </div>
             </div>
           )}
