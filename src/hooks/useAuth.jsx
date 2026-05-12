@@ -85,6 +85,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!profile?.id) return
+    // Solo re-registra si ya tiene permiso (el usuario lo activó antes)
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     initOneSignal()
       .then(() => registerPushUser(profile.id))
       .then(async (playerId) => {
