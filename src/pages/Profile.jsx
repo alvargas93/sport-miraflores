@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useBono } from '../hooks/useBono'
 import { useUserSports } from '../hooks/useUserSports'
-import { initOneSignal, registerPushUser } from '../lib/onesignal'
+import { subscribePush } from '../lib/push'
 
 const SPORT_COLORS = {
   crossfit: '#0abfbf',
@@ -166,21 +166,18 @@ export default function Profile() {
     setPushLoading(true)
     setPushError('')
     try {
-      await initOneSignal()
-      const playerId = await registerPushUser(profile.id)
+      const sub = await subscribePush()
       setPushStatus(Notification.permission)
-      if (playerId) {
-        await Promise.all([
-          supabase.from('users').update({ onesignal_id: playerId }).eq('id', profile.id),
-          supabase.from('push_subscriptions').upsert(
-            { user_id: profile.id, onesignal_id: playerId },
-            { onConflict: 'user_id,onesignal_id' }
-          ),
-        ])
+      if (sub) {
+        const subJson = sub.toJSON()
+        await supabase.from('push_subscriptions').upsert(
+          { user_id: profile.id, onesignal_id: subJson.endpoint, subscription: subJson },
+          { onConflict: 'user_id,onesignal_id' }
+        )
       }
     } catch (err) {
       setPushError(err?.message ?? 'Error desconocido')
-      setPushStatus(Notification.permission)
+      setPushStatus(typeof Notification !== 'undefined' ? Notification.permission : 'unsupported')
     } finally {
       setPushLoading(false)
     }

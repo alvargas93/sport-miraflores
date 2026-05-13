@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { initOneSignal, registerPushUser } from '../lib/onesignal'
+import { getExistingSubscription } from '../lib/push'
 
 const AuthContext = createContext(null)
 
@@ -85,19 +85,15 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!profile?.id) return
-    // Solo re-registra si ya tiene permiso (el usuario lo activó antes)
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-    initOneSignal()
-      .then(() => registerPushUser(profile.id))
-      .then(async (playerId) => {
-        if (!playerId) return
-        await Promise.all([
-          supabase.from('users').update({ onesignal_id: playerId }).eq('id', profile.id),
-          supabase.from('push_subscriptions').upsert(
-            { user_id: profile.id, onesignal_id: playerId },
-            { onConflict: 'user_id,onesignal_id' }
-          ),
-        ])
+    getExistingSubscription()
+      .then(async (sub) => {
+        if (!sub) return
+        const subJson = sub.toJSON()
+        await supabase.from('push_subscriptions').upsert(
+          { user_id: profile.id, onesignal_id: subJson.endpoint, subscription: subJson },
+          { onConflict: 'user_id,onesignal_id' }
+        )
       })
       .catch(() => {})
   }, [profile?.id])
