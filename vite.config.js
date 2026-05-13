@@ -14,7 +14,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       manifest: {
         name: 'Sport Miraflores',
-        short_name: 'Sport Miraflores',
+        short_name: 'Sport MF',
         description: 'Reserva tus clases de CrossFit y Hyrox',
         theme_color: '#0abfbf',
         background_color: '#0e0e0e',
