@@ -1,6 +1,9 @@
-import { precacheAndRoute } from 'workbox-precaching'
+import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching'
+import { NavigationRoute, registerRoute } from 'workbox-routing'
 
 precacheAndRoute(self.__WB_MANIFEST)
+
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')))
 
 self.addEventListener('push', (event) => {
   if (!event.data) return
