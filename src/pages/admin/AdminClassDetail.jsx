@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -24,7 +25,6 @@ export default function AdminClassDetail() {
   const [addError, setAddError] = useState('')
   const [overrideUserId, setOverrideUserId] = useState(null)
   const [zoomedUser, setZoomedUser] = useState(null)
-  const avatarDialogRef = useRef(null)
 
   const { data: classData, isLoading } = useQuery({
     queryKey: ['admin-class-detail', id],
@@ -162,28 +162,19 @@ export default function AdminClassDetail() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%' }}>
-      <dialog
-        ref={avatarDialogRef}
-        onClick={() => avatarDialogRef.current?.close()}
-        style={{
-          border: 'none', background: 'rgba(0,0,0,0.85)', padding: 0, margin: 0,
-          width: '100vw', height: '100vh', maxWidth: '100vw', maxHeight: '100vh',
-        }}
-      >
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{
-            width: '240px', height: '240px', borderRadius: '50%',
-            border: '3px solid var(--teal)', overflow: 'hidden',
-            background: 'var(--teal-glow)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-head)', fontSize: '80px', fontWeight: 800, color: 'var(--teal)',
-          }}>
-            {zoomedUser?.avatar_url
+      {zoomedUser && createPortal(
+        <div
+          onClick={() => setZoomedUser(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ width: '240px', height: '240px', borderRadius: '50%', border: '3px solid var(--teal)', overflow: 'hidden', background: 'var(--teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontSize: '80px', fontWeight: 800, color: 'var(--teal)' }}>
+            {zoomedUser.avatar_url
               ? <img src={zoomedUser.avatar_url} alt={zoomedUser.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : zoomedUser?.initials}
+              : zoomedUser.initials}
           </div>
-        </div>
-      </dialog>
+        </div>,
+        document.body
+      )}
       {/* Header */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '12px 16px 16px' }}>
         <button onClick={() => navigate('/admin/classes')} style={{ fontSize: '13px', color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: '10px', display: 'block' }}>
@@ -335,21 +326,16 @@ export default function AdminClassDetail() {
             cls.reservations.map((r) => {
               const initials = r.users?.full_name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() ?? '?'
               return (
-                <div key={r.id} style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setZoomedUser({ avatar_url: r.users?.avatar_url, full_name: r.users?.full_name, initials }); avatarDialogRef.current?.showModal() }}
-                    style={{
-                      width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
-                      background: 'var(--teal-glow)', border: '1.5px solid var(--teal)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'var(--font-head)', fontSize: '13px', fontWeight: 800, color: 'var(--teal)',
-                      overflow: 'hidden', cursor: 'pointer', padding: 0,
-                    }}
-                  >
+                <div
+                  key={r.id}
+                  onClick={() => setZoomedUser({ avatar_url: r.users?.avatar_url, full_name: r.users?.full_name, initials })}
+                  style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', cursor: 'pointer' }}
+                >
+                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0, background: 'var(--teal-glow)', border: '1.5px solid var(--teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontSize: '13px', fontWeight: 800, color: 'var(--teal)', overflow: 'hidden', pointerEvents: 'none' }}>
                     {r.users?.avatar_url
-                      ? <img src={r.users.avatar_url} alt={r.users.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+                      ? <img src={r.users.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : initials}
-                  </button>
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.users?.full_name}
@@ -360,7 +346,8 @@ export default function AdminClassDetail() {
                     <p style={{ fontSize: '11px', color: 'var(--muted)' }}>{r.users?.email}</p>
                   </div>
                   <button
-                    onClick={() => removeMutation.mutate(r.id)}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); removeMutation.mutate(r.id) }}
                     disabled={removeMutation.isPending}
                     style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '13px', border: '1px solid var(--danger)', color: 'var(--danger)', background: 'transparent', cursor: 'pointer', flexShrink: 0 }}
                   >
