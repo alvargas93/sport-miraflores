@@ -333,20 +333,20 @@ export default function AdminClassDetail() {
               const initials = r.users?.full_name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() ?? '?'
               return (
                 <div key={r.id} style={{ borderTop: '1px solid var(--border)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  <div
-                    onClick={() => setZoomedUser({ avatar_url: r.users?.avatar_url, full_name: r.users?.full_name, initials })}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setZoomedUser({ avatar_url: r.users?.avatar_url, full_name: r.users?.full_name, initials }) }}
                     style={{
                       width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0,
                       background: 'var(--teal-glow)', border: '1.5px solid var(--teal)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontFamily: 'var(--font-head)', fontSize: '13px', fontWeight: 800, color: 'var(--teal)',
-                      overflow: 'hidden', cursor: 'pointer',
+                      overflow: 'hidden', cursor: 'pointer', padding: 0,
                     }}
                   >
                     {r.users?.avatar_url
-                      ? <img src={r.users.avatar_url} alt={r.users.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ? <img src={r.users.avatar_url} alt={r.users.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
                       : initials}
-                  </div>
+                  </button>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {r.users?.full_name}
