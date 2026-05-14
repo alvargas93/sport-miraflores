@@ -39,13 +39,12 @@ function getState(cls) {
   return 'available'
 }
 
-export default function ClassModal({ cls, selectedDate, onClose }) {
+export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) {
   const { profile } = useAuth()
   const { data: bono } = useBono(profile?.id)
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
   const [bookingSuccess, setBookingSuccess] = useState(false)
-  const [zoomedAttendee, setZoomedAttendee] = useState(null)
 
   const state = getState(cls)
   const sportColor = cls ? (SPORT_COLORS[cls.sport_slug] ?? 'var(--teal)') : 'var(--teal)'
@@ -126,19 +125,6 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
 
   return (
     <>
-      {zoomedAttendee && (
-        <div
-          onClick={() => setZoomedAttendee(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <div style={{ width: '240px', height: '240px', borderRadius: '50%', border: '3px solid var(--teal)', overflow: 'hidden', background: 'var(--teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontSize: '80px', fontWeight: 800, color: 'var(--teal)' }}>
-            {zoomedAttendee.avatar_url
-              ? <img src={zoomedAttendee.avatar_url} alt={zoomedAttendee.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : zoomedAttendee.initials}
-          </div>
-        </div>
-      )}
-
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -240,7 +226,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
                   const openZoom = (e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    setZoomedAttendee({ avatar_url: a.avatar_url, full_name: a.full_name, initials })
+                    onZoomPhoto?.({ avatar_url: a.avatar_url, full_name: a.full_name, initials })
                   }
                   return (
                     <div

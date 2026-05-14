@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -46,6 +47,7 @@ export default function Bookings() {
   const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState(todayStr())
   const [selectedClass, setSelectedClass] = useState(null)
+  const [zoomedPhoto, setZoomedPhoto] = useState(null)
 
   const { data: classes = [], isLoading, isError } = useClasses(selectedDate, profile?.id)
   const { data: bono } = useBono(profile?.id)
@@ -147,10 +149,26 @@ export default function Bookings() {
           cls={selectedClass}
           selectedDate={selectedDate}
           onClose={() => setSelectedClass(null)}
+          onZoomPhoto={setZoomedPhoto}
         />
       )}
 
       <IosBanner />
+
+      {/* Photo zoom overlay — rendered to body via portal to avoid stacking context issues */}
+      {zoomedPhoto && createPortal(
+        <div
+          onClick={() => setZoomedPhoto(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ width: '240px', height: '240px', borderRadius: '50%', border: '3px solid var(--teal)', overflow: 'hidden', background: 'var(--teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontSize: '80px', fontWeight: 800, color: 'var(--teal)' }}>
+            {zoomedPhoto.avatar_url
+              ? <img src={zoomedPhoto.avatar_url} alt={zoomedPhoto.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : zoomedPhoto.initials}
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }
