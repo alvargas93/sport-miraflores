@@ -9,6 +9,7 @@ RETURNS TABLE (
   user_id           uuid,
   user_full_name    text,
   user_email        text,
+  user_avatar_url   text,
   booked_at         timestamptz,
   is_admin_override boolean
 )
@@ -20,6 +21,7 @@ AS $$
     r.user_id,
     u.full_name         AS user_full_name,
     u.email             AS user_email,
+    u.avatar_url        AS user_avatar_url,
     r.booked_at,
     r.is_admin_override
   FROM reservations r

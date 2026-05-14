@@ -131,6 +131,8 @@ export default function AdminUserDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
+  const [zoomedAvatar, setZoomedAvatar] = useState(false)
+
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.rpc('delete_user_account', { p_user_id: id })
@@ -191,19 +193,42 @@ export default function AdminUserDetail() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%' }}>
+      {/* Avatar zoom overlay */}
+      {zoomedAvatar && (
+        <div
+          onClick={() => setZoomedAvatar(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{
+            width: '240px', height: '240px', borderRadius: '50%',
+            border: '3px solid var(--teal)', overflow: 'hidden',
+            background: 'var(--teal-glow)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-head)', fontSize: '80px', fontWeight: 800, color: 'var(--teal)',
+          }}>
+            {user.avatar_url
+              ? <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : initials}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '12px 16px 16px' }}>
         <button onClick={() => navigate('/admin/users')} style={{ fontSize: '13px', color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: '12px', display: 'block' }}>
           ← Usuarios
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
-            background: 'var(--teal-glow)', border: '2px solid var(--teal)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-head)', fontSize: '20px', fontWeight: 800, color: 'var(--teal)',
-            overflow: 'hidden',
-          }}>
+          <div
+            onClick={() => setZoomedAvatar(true)}
+            style={{
+              width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
+              background: 'var(--teal-glow)', border: '2px solid var(--teal)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--font-head)', fontSize: '20px', fontWeight: 800, color: 'var(--teal)',
+              overflow: 'hidden', cursor: 'pointer',
+            }}
+          >
             {user.avatar_url
               ? <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : initials}
