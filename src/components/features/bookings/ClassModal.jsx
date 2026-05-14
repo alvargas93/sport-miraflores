@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../../lib/supabase'
 import { formatTime, formatDayLong } from '../../../lib/utils'
@@ -45,6 +46,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
   const [bookingSuccess, setBookingSuccess] = useState(false)
+  const [zoomedAttendee, setZoomedAttendee] = useState(null)
 
   const state = getState(cls)
   const sportColor = cls ? (SPORT_COLORS[cls.sport_slug] ?? 'var(--teal)') : 'var(--teal)'
@@ -125,6 +127,20 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
 
   return (
     <>
+      {zoomedAttendee && createPortal(
+        <div
+          onClick={() => setZoomedAttendee(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ width: '240px', height: '240px', borderRadius: '50%', border: '3px solid var(--teal)', overflow: 'hidden', background: 'var(--teal-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-head)', fontSize: '80px', fontWeight: 800, color: 'var(--teal)' }}>
+            {zoomedAttendee.avatar_url
+              ? <img src={zoomedAttendee.avatar_url} alt={zoomedAttendee.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : zoomedAttendee.initials}
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -225,18 +241,23 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
                   const initials = a.full_name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
                   return (
                     <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '48px' }}>
-                      <div style={{
-                        width: '42px', height: '42px', borderRadius: '50%',
-                        background: a.avatar_url ? 'transparent' : 'var(--teal-glow)',
-                        border: '1.5px solid var(--border)',
-                        overflow: 'hidden', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: 'var(--font-head)', fontSize: '14px', fontWeight: 800, color: 'var(--teal)',
-                      }}>
+                      <button
+                        type="button"
+                        onClick={() => setZoomedAttendee({ avatar_url: a.avatar_url, full_name: a.full_name, initials })}
+                        style={{
+                          width: '42px', height: '42px', borderRadius: '50%',
+                          background: a.avatar_url ? 'transparent' : 'var(--teal-glow)',
+                          border: '1.5px solid var(--border)',
+                          overflow: 'hidden', flexShrink: 0, padding: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'var(--font-head)', fontSize: '14px', fontWeight: 800, color: 'var(--teal)',
+                          cursor: 'pointer',
+                        }}
+                      >
                         {a.avatar_url
-                          ? <img src={a.avatar_url} alt={a.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ? <img src={a.avatar_url} alt={a.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
                           : initials}
-                      </div>
+                      </button>
                       <p style={{ fontSize: '9px', color: 'var(--muted)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
                         {a.full_name?.split(' ')[0]}
                       </p>
