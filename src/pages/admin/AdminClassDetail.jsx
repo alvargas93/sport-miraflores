@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -161,11 +162,10 @@ export default function AdminClassDetail() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%' }}>
-      {/* Avatar zoom overlay */}
-      {zoomedUser && (
+      {zoomedUser && createPortal(
         <div
           onClick={() => setZoomedUser(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <div style={{
             width: '240px', height: '240px', borderRadius: '50%',
@@ -178,7 +178,8 @@ export default function AdminClassDetail() {
               ? <img src={zoomedUser.avatar_url} alt={zoomedUser.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : zoomedUser.initials}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* Header */}
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '12px 16px 16px' }}>
