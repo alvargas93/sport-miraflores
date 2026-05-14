@@ -39,12 +39,13 @@ function getState(cls) {
   return 'available'
 }
 
-export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) {
+export default function ClassModal({ cls, selectedDate, onClose }) {
   const { profile } = useAuth()
   const { data: bono } = useBono(profile?.id)
   const queryClient = useQueryClient()
   const [error, setError] = useState('')
   const [bookingSuccess, setBookingSuccess] = useState(false)
+  const [zoomedAttendee, setZoomedAttendee] = useState(null)
 
   const state = getState(cls)
   const sportColor = cls ? (SPORT_COLORS[cls.sport_slug] ?? 'var(--teal)') : 'var(--teal)'
@@ -217,8 +218,9 @@ export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) 
           {/* Attendees */}
           {attendees.length > 0 && (
             <div style={{ marginBottom: '16px' }}>
-              <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '10px' }}>
-                Apuntados · {attendees.length}
+              {/* DEBUG: teal dot confirms new code is running */}
+              <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--teal)', textTransform: 'uppercase', marginBottom: '10px' }}>
+                ● Apuntados · {attendees.length}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {attendees.map((a, i) => {
@@ -227,12 +229,10 @@ export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) 
                     <button
                       key={i}
                       type="button"
-                      onClick={() => onZoomPhoto?.({ avatar_url: a.avatar_url, full_name: a.full_name, initials })}
+                      onClick={() => setZoomedAttendee({ avatar_url: a.avatar_url, full_name: a.full_name, initials })}
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '48px',
                         background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                        touchAction: 'manipulation',
-                        WebkitTapHighlightColor: 'transparent',
                       }}
                     >
                       <div style={{
@@ -337,7 +337,6 @@ export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) 
           alignItems: 'center', justifyContent: 'center',
           gap: '16px',
         }}>
-          {/* Expanding ring */}
           <div style={{
             position: 'absolute',
             width: '100px', height: '100px',
@@ -345,8 +344,6 @@ export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) 
             border: '2px solid rgba(10,191,191,0.7)',
             animation: 'ring-expand 0.9s ease-out forwards',
           }} />
-
-          {/* Checkmark circle */}
           <div style={{
             width: '80px', height: '80px',
             borderRadius: '50%',
@@ -362,14 +359,10 @@ export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) 
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{
-                  strokeDasharray: 24,
-                  animation: 'check-draw 0.38s ease 0.32s both',
-                }}
+                style={{ strokeDasharray: 24, animation: 'check-draw 0.38s ease 0.32s both' }}
               />
             </svg>
           </div>
-
           <p style={{
             fontFamily: 'var(--font-head)',
             fontSize: '20px', fontWeight: 800,
@@ -378,6 +371,31 @@ export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) 
           }}>
             ¡Reserva confirmada!
           </p>
+        </div>
+      )}
+
+      {/* Photo zoom overlay — identical pattern to bookingSuccess */}
+      {zoomedAttendee && (
+        <div
+          onClick={() => setZoomedAttendee(null)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.9)',
+            zIndex: 300,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <div style={{
+            width: '240px', height: '240px', borderRadius: '50%',
+            border: '3px solid var(--teal)', overflow: 'hidden',
+            background: 'var(--teal-glow)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-head)', fontSize: '80px', fontWeight: 800, color: 'var(--teal)',
+          }}>
+            {zoomedAttendee.avatar_url
+              ? <img src={zoomedAttendee.avatar_url} alt={zoomedAttendee.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : zoomedAttendee.initials}
+          </div>
         </div>
       )}
     </>
