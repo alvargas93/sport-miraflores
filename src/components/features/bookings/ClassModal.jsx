@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../../lib/supabase'
 import { formatTime, formatDayLong } from '../../../lib/utils'
@@ -127,7 +126,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
 
   return (
     <>
-      {zoomedAttendee && createPortal(
+      {zoomedAttendee && (
         <div
           onClick={() => setZoomedAttendee(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -137,8 +136,7 @@ export default function ClassModal({ cls, selectedDate, onClose }) {
               ? <img src={zoomedAttendee.avatar_url} alt={zoomedAttendee.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : zoomedAttendee.initials}
           </div>
-        </div>,
-        document.body
+        </div>
       )}
 
       {/* Backdrop */}
