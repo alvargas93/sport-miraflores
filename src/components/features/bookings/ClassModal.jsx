@@ -223,17 +223,17 @@ export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {attendees.map((a, i) => {
                   const initials = a.full_name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
-                  const openZoom = (e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    onZoomPhoto?.({ avatar_url: a.avatar_url, full_name: a.full_name, initials })
-                  }
                   return (
-                    <div
+                    <button
                       key={i}
-                      onTouchEnd={openZoom}
-                      onClick={openZoom}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '48px', cursor: 'pointer' }}
+                      type="button"
+                      onClick={() => onZoomPhoto?.({ avatar_url: a.avatar_url, full_name: a.full_name, initials })}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', width: '48px',
+                        background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
                     >
                       <div style={{
                         width: '42px', height: '42px', borderRadius: '50%',
@@ -242,16 +242,15 @@ export default function ClassModal({ cls, selectedDate, onClose, onZoomPhoto }) 
                         overflow: 'hidden', flexShrink: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: 'var(--font-head)', fontSize: '14px', fontWeight: 800, color: 'var(--teal)',
-                        pointerEvents: 'none',
                       }}>
                         {a.avatar_url
                           ? <img src={a.avatar_url} alt={a.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           : initials}
                       </div>
-                      <p style={{ fontSize: '9px', color: 'var(--muted)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', pointerEvents: 'none' }}>
+                      <p style={{ fontSize: '9px', color: 'var(--muted)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
                         {a.full_name?.split(' ')[0]}
                       </p>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
