@@ -10,6 +10,7 @@ export default function AdminBonos() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonthStart().slice(0, 7))
   const [assigningUserId, setAssigningUserId] = useState(null)
   const [selectedBonoId, setSelectedBonoId] = useState('')
+  const [applyResult, setApplyResult] = useState(null)
 
   const monthDate = selectedMonth + '-01'
 
@@ -27,7 +28,7 @@ export default function AdminBonos() {
     queryKey: ['admin-bonos', monthDate],
     queryFn: async () => {
       const [usersRes, bonosRes] = await Promise.all([
-        supabase.from('users').select('id, full_name, email, role, is_active').eq('is_active', true).order('full_name'),
+        supabase.from('users').select('id, full_name, email, role, is_active, recurring_bono_id').eq('is_active', true).order('full_name'),
         supabase.from('user_bonos').select('*, bonos(name, max_classes)').eq('month', monthDate),
       ])
       if (usersRes.error) throw usersRes.error
@@ -67,10 +68,24 @@ export default function AdminBonos() {
     },
   })
 
+  const applyRecurringMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('apply_recurring_bonos', { p_month: monthDate })
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-bonos', monthDate] })
+      setApplyResult(data.bonos_created)
+      setTimeout(() => setApplyResult(null), 4000)
+    },
+  })
+
   const monthLabel = formatDate(monthDate + 'T12:00:00', { month: 'long', year: 'numeric' })
 
   const withBono = usersWithBonos.filter((u) => u.bono)
-  const withoutBono = usersWithBonos.filter((u) => !u.bono)
+  const withRecurring = usersWithBonos.filter((u) => !u.bono && u.recurring_bono_id)
+  const withoutBono = usersWithBonos.filter((u) => !u.bono && !u.recurring_bono_id)
 
   function UserRow({ user }) {
     const bono = user.bono
@@ -98,6 +113,10 @@ export default function AdminBonos() {
                 {bono.bonos?.max_classes
                   ? ` · ${bono.classes_used}/${bono.bonos.max_classes}`
                   : ` · ${bono.classes_used} usadas`}
+              </p>
+            ) : user.recurring_bono_id ? (
+              <p style={{ fontSize: '11px', color: 'var(--teal)', marginTop: '1px', opacity: 0.7 }}>
+                {bonoCatalog.find((b) => b.id === user.recurring_bono_id)?.name ?? '…'} · pendiente
               </p>
             ) : (
               <p style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '1px' }}>Sin bono</p>
@@ -170,6 +189,29 @@ export default function AdminBonos() {
         </div>
       ) : (
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {withRecurring.length > 0 && (
+            <div style={{ background: 'var(--surface)', border: '1px solid rgba(10,191,191,0.25)', borderRadius: '14px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 8px' }}>
+                <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--teal)' }}>
+                  Renovación automática ({withRecurring.length})
+                </p>
+                <button
+                  onClick={() => applyRecurringMutation.mutate()}
+                  disabled={applyRecurringMutation.isPending}
+                  style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, border: '1px solid var(--teal)', color: 'var(--teal)', background: 'transparent', cursor: 'pointer', opacity: applyRecurringMutation.isPending ? 0.6 : 1 }}
+                >
+                  {applyRecurringMutation.isPending ? '…' : 'Aplicar ahora'}
+                </button>
+              </div>
+              {applyResult !== null && (
+                <p style={{ fontSize: '12px', color: 'var(--success)', padding: '0 16px 8px' }}>
+                  {applyResult} {applyResult === 1 ? 'bono creado' : 'bonos creados'} correctamente.
+                </p>
+              )}
+              {withRecurring.map((u) => <UserRow key={u.id} user={u} />)}
+            </div>
+          )}
+
           {withoutBono.length > 0 && (
             <div style={{ background: 'var(--surface)', border: '1px solid rgba(224,85,85,0.3)', borderRadius: '14px', overflow: 'hidden' }}>
               <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--danger)', padding: '12px 16px 8px' }}>

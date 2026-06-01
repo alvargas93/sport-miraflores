@@ -362,6 +362,9 @@ export default function Profile() {
                       <p style={{ fontSize: '12px', color: 'var(--teal)', marginTop: '2px' }}>
                         {bonoText}
                       </p>
+                      {bono.is_pending && (
+                        <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>Renovación automática activa</p>
+                      )}
                     </div>
                     <div style={{
                       width: '36px', height: '36px', borderRadius: '12px',
