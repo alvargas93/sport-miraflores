@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useBono } from '../hooks/useBono'
 import { useUserSports } from '../hooks/useUserSports'
-import { subscribePush } from '../lib/push'
+
 
 const SPORT_COLORS = {
   crossfit: '#0abfbf',
@@ -155,33 +155,6 @@ export default function Profile() {
   const [pwLoading, setPwLoading] = useState(false)
   const [pwError, setPwError] = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
-
-  const [pushStatus, setPushStatus] = useState(
-    () => (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported')
-  )
-  const [pushLoading, setPushLoading] = useState(false)
-  const [pushError, setPushError] = useState('')
-
-  async function handleEnablePush() {
-    setPushLoading(true)
-    setPushError('')
-    try {
-      const sub = await subscribePush()
-      setPushStatus(Notification.permission)
-      if (sub) {
-        const subJson = sub.toJSON()
-        await supabase.from('push_subscriptions').upsert(
-          { user_id: profile.id, onesignal_id: subJson.endpoint, subscription: subJson },
-          { onConflict: 'user_id,onesignal_id' }
-        )
-      }
-    } catch (err) {
-      setPushError(err?.message ?? 'Error desconocido')
-      setPushStatus(typeof Notification !== 'undefined' ? Notification.permission : 'unsupported')
-    } finally {
-      setPushLoading(false)
-    }
-  }
 
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') !== 'light')
 
@@ -533,58 +506,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Notificaciones */}
-          {pushStatus !== 'unsupported' && (
-            <div>
-              <SectionLabel>Notificaciones</SectionLabel>
-              <div style={{ background: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
-                <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'rgba(10,191,191,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '14px', color: 'var(--text)' }}>Notificaciones push</span>
-                      {pushStatus === 'granted' && (
-                        <p style={{ fontSize: '11px', color: 'var(--success)', marginTop: '2px' }}>Activadas</p>
-                      )}
-                      {pushStatus === 'denied' && (
-                        <p style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '2px' }}>Bloqueadas — actívalas en ajustes del navegador</p>
-                      )}
-                      {pushStatus === 'default' && (
-                        <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>No activadas</p>
-                      )}
-                    </div>
-                  </div>
-                  {pushStatus === 'granted' && (
-                    <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    </div>
-                  )}
-                  {pushStatus === 'default' && (
-                    <button
-                      onClick={handleEnablePush}
-                      disabled={pushLoading}
-                      style={{ padding: '7px 14px', borderRadius: '10px', background: 'var(--teal)', color: '#000', border: 'none', cursor: pushLoading ? 'default' : 'pointer', fontSize: '13px', fontWeight: 700, flexShrink: 0, opacity: pushLoading ? 0.6 : 1 }}
-                    >
-                      {pushLoading ? '…' : 'Activar'}
-                    </button>
-                  )}
-                </div>
-                {pushError && (
-                  <p style={{ fontSize: '12px', color: 'var(--danger)', padding: '0 16px 12px' }}>
-                    Error: {pushError}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Seguridad */}
           <div>
             <SectionLabel>Seguridad</SectionLabel>
@@ -694,7 +615,9 @@ export default function Profile() {
             Cerrar sesión
           </button>
 
-          <div style={{ height: '8px' }} />
+          <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--muted)', opacity: 0.5, paddingBottom: '4px' }}>
+            Desarrollado por Alvaro Vargas
+          </p>
         </div>
       </div>
 
