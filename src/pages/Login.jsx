@@ -310,6 +310,14 @@ export default function Login() {
           </div>
         )}
       </div>
+
+      <p style={{
+        position: 'absolute', bottom: '24px',
+        fontSize: '11px', color: 'var(--muted)', opacity: 0.4,
+        letterSpacing: '0.3px',
+      }}>
+        Desarrollado por Alvaro Vargas
+      </p>
     </div>
   )
 }

@@ -55,10 +55,19 @@ export default function Splash() {
         </p>
       </div>
 
+      <p style={{
+        position: 'absolute', bottom: '24px',
+        fontSize: '11px', color: 'var(--muted)', opacity: 0.4,
+        letterSpacing: '0.3px',
+        animation: 'fade-up 0.4s ease 0.9s both',
+      }}>
+        Desarrollado por Alvaro Vargas
+      </p>
+
       {/* Loading dots */}
       <div
         style={{
-          position: 'absolute', bottom: '52px',
+          position: 'absolute', bottom: '56px',
           display: 'flex', alignItems: 'center', gap: '7px',
           animation: 'fade-up 0.4s ease 0.7s both',
         }}
