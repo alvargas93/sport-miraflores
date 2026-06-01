@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { todayStr, madridDayBounds } from '../../lib/utils'
+import { todayStr, madridDayBounds, currentMonthStart } from '../../lib/utils'
 
 function IconCalendarStat() {
   return (
@@ -87,7 +87,7 @@ function IconChevron() {
   )
 }
 
-function StatCard({ label, value, loading, icon, onClick }) {
+function StatCard({ label, value, loading, icon, onClick, suffix = '', accent = 'var(--teal)', iconBg = 'rgba(10,191,191,0.12)' }) {
   return (
     <button
       onClick={onClick}
@@ -107,7 +107,7 @@ function StatCard({ label, value, loading, icon, onClick }) {
     >
       <div style={{
         width: '36px', height: '36px', borderRadius: '12px',
-        background: 'rgba(10,191,191,0.12)', color: 'var(--teal)',
+        background: iconBg, color: accent,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: '2px',
       }}>
@@ -115,9 +115,9 @@ function StatCard({ label, value, loading, icon, onClick }) {
       </div>
       <p style={{
         fontFamily: 'var(--font-head)', fontSize: '34px', fontWeight: 800,
-        color: 'var(--teal)', lineHeight: 1,
+        color: accent, lineHeight: 1,
       }}>
-        {loading ? '–' : value}
+        {loading ? '–' : value}{!loading && suffix}
       </p>
       <p style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.3 }}>
         {label}
@@ -140,30 +140,44 @@ export default function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats', today],
     queryFn: async () => {
-      const [classesRes, usersRes] = await Promise.all([
+      const month = currentMonthStart()
+      const [classesRes, usersRes, bonosRes] = await Promise.all([
         supabase
           .from('classes')
-          .select('id, reservations(id, status)', { count: 'exact' })
+          .select('id, max_capacity, reservations(id, status)')
           .gte('starts_at', madridDayBounds(today).start)
           .lte('starts_at', madridDayBounds(today).end)
           .eq('is_cancelled', false),
         supabase
           .from('users')
-          .select('*', { count: 'exact', head: true })
+          .select('id')
           .eq('is_active', true)
           .eq('role', 'user'),
+        supabase
+          .from('user_bonos')
+          .select('user_id')
+          .eq('month', month),
       ])
 
       const classesData = classesRes.data ?? []
+      const usersData = usersRes.data ?? []
+
       const reservationsToday = classesData.reduce(
         (sum, cls) => sum + (cls.reservations?.filter((r) => r.status === 'confirmed').length ?? 0),
         0
       )
+      const totalCapacity = classesData.reduce((sum, cls) => sum + (cls.max_capacity ?? 0), 0)
+      const occupancy = totalCapacity > 0 ? Math.round((reservationsToday / totalCapacity) * 100) : null
+
+      const userIdsWithBono = new Set((bonosRes.data ?? []).map((b) => b.user_id))
+      const withoutBono = usersData.filter((u) => !userIdsWithBono.has(u.id)).length
 
       return {
         classes: classesData.length,
         reservations: reservationsToday,
-        users: usersRes.count ?? 0,
+        users: usersData.length,
+        occupancy,
+        withoutBono,
       }
     },
     staleTime: 1000 * 60,
@@ -191,10 +205,45 @@ export default function AdminDashboard() {
           <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '10px', paddingLeft: '2px' }}>
             Hoy
           </p>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
             <StatCard label="Clases" value={stats?.classes} loading={isLoading} icon={<IconCalendarStat />} onClick={() => navigate('/admin/classes')} />
             <StatCard label="Reservas" value={stats?.reservations} loading={isLoading} icon={<IconBooking />} onClick={() => navigate('/admin/classes')} />
             <StatCard label="Socios" value={stats?.users} loading={isLoading} icon={<IconUsers />} onClick={() => navigate('/admin/users')} />
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {(() => {
+              const occ = stats?.occupancy
+              const occAccent = occ == null ? 'var(--muted)' : occ >= 70 ? 'var(--success)' : occ >= 40 ? 'var(--warning)' : 'var(--danger)'
+              const occBg = occ == null ? 'rgba(122,122,122,0.1)' : occ >= 70 ? 'rgba(46,204,143,0.12)' : occ >= 40 ? 'rgba(232,160,32,0.12)' : 'rgba(224,85,85,0.12)'
+              return (
+                <StatCard
+                  label="Ocupación hoy"
+                  value={occ == null ? '—' : occ}
+                  suffix="%"
+                  loading={isLoading}
+                  icon={<IconCalendarStat />}
+                  onClick={() => navigate('/admin/classes')}
+                  accent={occAccent}
+                  iconBg={occBg}
+                />
+              )
+            })()}
+            {(() => {
+              const n = stats?.withoutBono ?? 0
+              const accent = n === 0 ? 'var(--success)' : 'var(--danger)'
+              const iconBg = n === 0 ? 'rgba(46,204,143,0.12)' : 'rgba(224,85,85,0.12)'
+              return (
+                <StatCard
+                  label="Sin bono este mes"
+                  value={n}
+                  loading={isLoading}
+                  icon={<IconBono />}
+                  onClick={() => navigate('/admin/bonos')}
+                  accent={accent}
+                  iconBg={iconBg}
+                />
+              )
+            })()}
           </div>
         </div>
 
