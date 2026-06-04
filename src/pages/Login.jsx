@@ -316,7 +316,7 @@ export default function Login() {
         fontSize: '11px', color: 'var(--muted)', opacity: 0.4,
         letterSpacing: '0.3px',
       }}>
-        Desarrollado por Alvaro Vargas
+        Desarrollado por <a href="https://avforge.vercel.app/es" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>AV Forge</a>
       </p>
     </div>
   )
