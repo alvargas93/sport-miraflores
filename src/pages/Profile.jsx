@@ -616,7 +616,7 @@ export default function Profile() {
           </button>
 
           <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--muted)', opacity: 0.5, paddingBottom: '4px' }}>
-            Desarrollado por <a href="https://avforge.vercel.app/es" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>AV Forge</a>
+            Desarrollado por <a href="https://www.alvarovargas.es/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Alvaro Vargas</a>
           </p>
         </div>
       </div>

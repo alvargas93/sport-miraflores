@@ -61,7 +61,7 @@ export default function Splash() {
         letterSpacing: '0.3px',
         animation: 'fade-up 0.4s ease 0.9s both',
       }}>
-        Desarrollado por <a href="https://avforge.vercel.app/es" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>AV Forge</a>
+        Desarrollado por <a href="https://www.alvarovargas.es/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Alvaro Vargas</a>
       </p>
 
       {/* Loading dots */}
