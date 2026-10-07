@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { currentMonthStart, formatDate } from '../../lib/utils'
+import { logUserActiveChange } from '../../lib/audit'
 
 const SPORT_COLORS = { crossfit: '#0abfbf', hyrox: '#e8a020' }
 
@@ -118,6 +119,7 @@ export default function AdminUserDetail() {
     mutationFn: async (is_active) => {
       const { error } = await supabase.from('users').update({ is_active }).eq('id', id)
       if (error) throw error
+      await logUserActiveChange(profile.id, [id], is_active)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-user', id] })

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
+import { logUserActiveChange } from '../../lib/audit'
 
 const SPORT_COLORS = { crossfit: '#0abfbf', hyrox: '#e8a020' }
 const SPORT_SHORT = { crossfit: 'CF', hyrox: 'Hyrox' }
@@ -25,6 +26,8 @@ export default function AdminUsers() {
   const [createForm, setCreateForm] = useState(EMPTY_FORM)
   const [createError, setCreateError] = useState('')
   const [createLoading, setCreateLoading] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
   const isGeneralAdmin = profile?.role === 'general_admin'
   const isSportAdmin = profile?.role === 'sport_admin'
 
@@ -73,9 +76,36 @@ export default function AdminUsers() {
     mutationFn: async ({ id, is_active }) => {
       const { error } = await supabase.from('users').update({ is_active }).eq('id', id)
       if (error) throw error
+      await logUserActiveChange(profile.id, [id], is_active)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
   })
+
+  const bulkMutation = useMutation({
+    mutationFn: async ({ ids, is_active }) => {
+      const { error } = await supabase.from('users').update({ is_active }).in('id', ids)
+      if (error) throw error
+      await logUserActiveChange(profile.id, ids, is_active)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      exitSelectMode()
+    },
+  })
+
+  function exitSelectMode() {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+  }
+
+  function toggleSelected(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   function canEditUser(user) {
     if (isGeneralAdmin) return user.role !== 'general_admin'
@@ -146,6 +176,26 @@ export default function AdminUsers() {
     return !q || u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)
   })
 
+  const selectableFiltered = filtered.filter((u) => canEditUser(u) && u.role !== 'general_admin')
+  const allFilteredSelected = selectableFiltered.length > 0 && selectableFiltered.every((u) => selectedIds.has(u.id))
+  const selectedCount = selectedIds.size
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (allFilteredSelected) selectableFiltered.forEach((u) => next.delete(u.id))
+      else selectableFiltered.forEach((u) => next.add(u.id))
+      return next
+    })
+  }
+
+  function bulkSetActive(is_active) {
+    if (selectedCount === 0) return
+    const verb = is_active ? 'activar' : 'desactivar'
+    if (!window.confirm(`¿Seguro que quieres ${verb} ${selectedCount} usuario${selectedCount === 1 ? '' : 's'}?`)) return
+    bulkMutation.mutate({ ids: [...selectedIds], is_active })
+  }
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100%' }}>
       <div style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '12px 16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -159,6 +209,19 @@ export default function AdminUsers() {
         />
         {(isGeneralAdmin || isSportAdmin) && (
           <button
+            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            style={{
+              padding: '10px 12px', borderRadius: '10px', fontSize: '13px', fontWeight: 600, flexShrink: 0, cursor: 'pointer',
+              background: selectMode ? 'var(--teal-glow)' : 'var(--surface2)',
+              border: `1px solid ${selectMode ? 'var(--teal)' : 'var(--border)'}`,
+              color: selectMode ? 'var(--teal)' : 'var(--text)',
+            }}
+          >
+            {selectMode ? 'Cerrar' : 'Seleccionar'}
+          </button>
+        )}
+        {(isGeneralAdmin || isSportAdmin) && !selectMode && (
+          <button
             onClick={() => { setShowCreate(true); setCreateForm(EMPTY_FORM); setCreateError('') }}
             style={{ padding: '10px 16px', borderRadius: '10px', background: 'var(--teal)', color: '#000', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 700, flexShrink: 0 }}
           >
@@ -166,6 +229,57 @@ export default function AdminUsers() {
           </button>
         )}
       </div>
+
+      {selectMode && (
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 10,
+          background: 'var(--surface2)', borderBottom: '1px solid var(--border)',
+          padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+        }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text)', cursor: 'pointer', flex: 1, minWidth: '140px' }}>
+            <input
+              type="checkbox"
+              checked={allFilteredSelected}
+              onChange={toggleSelectAll}
+              disabled={selectableFiltered.length === 0}
+              style={{ width: '18px', height: '18px', accentColor: 'var(--teal)' }}
+            />
+            Seleccionar todos ({selectableFiltered.length})
+          </label>
+          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+            {selectedCount} seleccionado{selectedCount === 1 ? '' : 's'}
+          </span>
+          <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+            <button
+              onClick={() => bulkSetActive(true)}
+              disabled={selectedCount === 0 || bulkMutation.isPending}
+              style={{
+                flex: 1, padding: '9px', borderRadius: '10px', fontSize: '13px', fontWeight: 700,
+                border: '1px solid var(--success)', color: 'var(--success)', background: 'transparent',
+                cursor: selectedCount === 0 ? 'default' : 'pointer', opacity: selectedCount === 0 ? 0.4 : 1,
+              }}
+            >
+              Activar
+            </button>
+            <button
+              onClick={() => bulkSetActive(false)}
+              disabled={selectedCount === 0 || bulkMutation.isPending}
+              style={{
+                flex: 1, padding: '9px', borderRadius: '10px', fontSize: '13px', fontWeight: 700,
+                border: '1px solid var(--danger)', color: 'var(--danger)', background: 'transparent',
+                cursor: selectedCount === 0 ? 'default' : 'pointer', opacity: selectedCount === 0 ? 0.4 : 1,
+              }}
+            >
+              Desactivar
+            </button>
+          </div>
+          {bulkMutation.isError && (
+            <p style={{ width: '100%', fontSize: '12px', color: 'var(--danger)' }}>
+              Error al actualizar los usuarios. Inténtalo de nuevo.
+            </p>
+          )}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -181,6 +295,10 @@ export default function AdminUsers() {
             const initials = user.full_name?.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
             const sports = (user.user_sports ?? []).map((us) => us.sports).filter(Boolean)
             const editable = canEditUser(user)
+            const selectable = editable && user.role !== 'general_admin'
+            const openUser = () => (selectMode
+              ? selectable && toggleSelected(user.id)
+              : navigate(`/admin/users/${user.id}`))
 
             return (
               <div
@@ -189,10 +307,20 @@ export default function AdminUsers() {
                   borderBottom: '1px solid var(--border)', padding: '12px 16px',
                   display: 'flex', alignItems: 'center', gap: '12px',
                   opacity: user.is_active ? 1 : 0.6,
+                  background: selectMode && selectedIds.has(user.id) ? 'var(--teal-glow)' : 'transparent',
                 }}
               >
+                {selectMode && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(user.id)}
+                    onChange={() => toggleSelected(user.id)}
+                    disabled={!selectable}
+                    style={{ width: '18px', height: '18px', flexShrink: 0, accentColor: 'var(--teal)', visibility: selectable ? 'visible' : 'hidden' }}
+                  />
+                )}
                 <div
-                  onClick={() => navigate(`/admin/users/${user.id}`)}
+                  onClick={openUser}
                   style={{
                     width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0,
                     background: 'var(--teal-glow)', border: '1px solid var(--teal)',
@@ -206,7 +334,7 @@ export default function AdminUsers() {
                     : initials}
                 </div>
 
-                <div className="flex-1 min-w-0" onClick={() => navigate(`/admin/users/${user.id}`)} style={{ cursor: 'pointer' }}>
+                <div className="flex-1 min-w-0" onClick={openUser} style={{ cursor: 'pointer' }}>
                   <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.full_name}
                   </p>
@@ -224,7 +352,7 @@ export default function AdminUsers() {
                   </div>
                 </div>
 
-                {editable && user.role !== 'general_admin' && (
+                {selectable && !selectMode && (
                   <button
                     onClick={() => toggleMutation.mutate({ id: user.id, is_active: !user.is_active })}
                     disabled={toggleMutation.isPending}
@@ -239,7 +367,9 @@ export default function AdminUsers() {
                   </button>
                 )}
 
-                <span onClick={() => navigate(`/admin/users/${user.id}`)} style={{ color: 'var(--muted)', fontSize: '20px', cursor: 'pointer', flexShrink: 0 }}>›</span>
+                {!selectMode && (
+                  <span onClick={openUser} style={{ color: 'var(--muted)', fontSize: '20px', cursor: 'pointer', flexShrink: 0 }}>›</span>
+                )}
               </div>
             )
           })}
