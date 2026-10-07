@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
+import { logUserActiveChange } from '../../lib/audit'
 
 const SPORT_COLORS = { crossfit: '#0abfbf', hyrox: '#e8a020' }
 const SPORT_SHORT = { crossfit: 'CF', hyrox: 'Hyrox' }
@@ -75,6 +76,7 @@ export default function AdminUsers() {
     mutationFn: async ({ id, is_active }) => {
       const { error } = await supabase.from('users').update({ is_active }).eq('id', id)
       if (error) throw error
+      await logUserActiveChange(profile.id, [id], is_active)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-users'] }),
   })
@@ -83,6 +85,7 @@ export default function AdminUsers() {
     mutationFn: async ({ ids, is_active }) => {
       const { error } = await supabase.from('users').update({ is_active }).in('id', ids)
       if (error) throw error
+      await logUserActiveChange(profile.id, ids, is_active)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
