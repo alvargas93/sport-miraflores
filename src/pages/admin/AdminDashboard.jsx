@@ -137,6 +137,25 @@ function StatCard({ label, value, loading, icon, onClick, suffix = '', accent = 
   )
 }
 
+function SportStat({ label, value, sub, loading, onClick, accent }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1, minWidth: 0, textAlign: 'left', cursor: 'pointer',
+        background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.05)',
+        borderLeft: `3px solid ${accent}`, borderRadius: '16px', padding: '14px',
+      }}
+    >
+      <p style={{ fontSize: '12px', color: 'var(--muted)' }}>{label}</p>
+      <p style={{ fontFamily: 'var(--font-head)', fontSize: '30px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.1 }}>
+        {loading ? '–' : value}
+      </p>
+      {!loading && sub && <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>{sub}</p>}
+    </button>
+  )
+}
+
 const quickLinks = [
   { to: '/admin/users',     label: 'Usuarios',    desc: 'Gestionar socios y admins',  Icon: IconUsersMgmt,  color: '#7c6af7' },
   { to: '/admin/classes',   label: 'Clases',      desc: 'Ver y cancelar clases',       Icon: IconClasesLink, color: '#0abfbf' },
@@ -155,7 +174,7 @@ export default function AdminDashboard() {
     queryKey: ['admin-stats', today],
     queryFn: async () => {
       const month = currentMonthStart()
-      const [classesRes, usersRes, bonosRes] = await Promise.all([
+      const [classesRes, usersRes, bonosRes, userSportsRes] = await Promise.all([
         supabase
           .from('classes')
           .select('id, max_capacity, reservations(id, status)')
@@ -171,6 +190,9 @@ export default function AdminDashboard() {
           .from('user_bonos')
           .select('user_id')
           .eq('month', month),
+        supabase
+          .from('user_sports')
+          .select('user_id, sports(slug)'),
       ])
 
       const classesData = classesRes.data ?? []
@@ -186,8 +208,27 @@ export default function AdminDashboard() {
       const userIdsWithBono = new Set((bonosRes.data ?? []).map((b) => b.user_id))
       const withoutBono = usersData.filter((u) => !userIdsWithBono.has(u.id)).length
 
+      // Socios activos por deporte (CrossFit, Hyrox, ambos, ninguno)
+      const sportsByUser = new Map()
+      for (const us of userSportsRes.data ?? []) {
+        if (!us.sports) continue
+        if (!sportsByUser.has(us.user_id)) sportsByUser.set(us.user_id, new Set())
+        sportsByUser.get(us.user_id).add(us.sports.slug)
+      }
+      const sportCounts = { crossfit: 0, hyrox: 0, both: 0, none: 0 }
+      for (const u of usersData) {
+        const slugs = sportsByUser.get(u.id) ?? new Set()
+        const cf = slugs.has('crossfit')
+        const hy = slugs.has('hyrox')
+        if (cf) sportCounts.crossfit++
+        if (hy) sportCounts.hyrox++
+        if (cf && hy) sportCounts.both++
+        if (slugs.size === 0) sportCounts.none++
+      }
+
       return {
         classes: classesData.length,
+        sportCounts,
         reservations: reservationsToday,
         users: usersData.length,
         occupancy,
@@ -258,6 +299,32 @@ export default function AdminDashboard() {
                 />
               )
             })()}
+          </div>
+        </div>
+
+        {/* Socios por deporte */}
+        <div>
+          <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '10px', paddingLeft: '2px' }}>
+            Socios activos por deporte
+          </p>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            {[
+              { label: 'CrossFit', value: stats?.sportCounts.crossfit, sub: stats && `${stats.sportCounts.crossfit - stats.sportCounts.both} solo CrossFit`, accent: '#0abfbf' },
+              { label: 'Hyrox', value: stats?.sportCounts.hyrox, sub: stats && `${stats.sportCounts.hyrox - stats.sportCounts.both} solo Hyrox`, accent: '#e8a020' },
+            ].map((item) => (
+              <SportStat key={item.label} {...item} loading={isLoading} onClick={() => navigate('/admin/users')} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <SportStat label="Ambos deportes" value={stats?.sportCounts.both} loading={isLoading} accent="var(--text)" onClick={() => navigate('/admin/users')} />
+            <SportStat
+              label="Sin deporte asignado"
+              value={stats?.sportCounts.none}
+              sub={stats?.sportCounts.none ? 'No pueden reservar' : null}
+              loading={isLoading}
+              accent={stats?.sportCounts.none ? 'var(--danger)' : 'var(--success)'}
+              onClick={() => navigate('/admin/users')}
+            />
           </div>
         </div>
 
