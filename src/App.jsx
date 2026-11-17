@@ -15,6 +15,7 @@ import AdminClasses from './pages/admin/AdminClasses'
 import AdminClassDetail from './pages/admin/AdminClassDetail'
 import AdminTemplates from './pages/admin/AdminTemplates'
 import AdminBonos from './pages/admin/AdminBonos'
+import AdminBilling from './pages/admin/AdminBilling'
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="classes/:id" element={<AdminClassDetail />} />
             <Route path="templates" element={<AdminTemplates />} />
             <Route path="bonos" element={<AdminBonos />} />
+            <Route path="billing" element={<AdminBilling />} />
           </Route>
         </Route>
       </Route>
