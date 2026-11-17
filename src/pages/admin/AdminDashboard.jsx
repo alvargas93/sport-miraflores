@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../hooks/useAuth'
 import { todayStr, madridDayBounds, currentMonthStart } from '../../lib/utils'
 
 function IconCalendarStat() {
@@ -79,6 +80,16 @@ function IconBono() {
   )
 }
 
+function IconBilling() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6.5A7 7 0 1 0 18 17.5"/>
+      <line x1="4" y1="10" x2="13" y2="10"/>
+      <line x1="4" y1="14" x2="13" y2="14"/>
+    </svg>
+  )
+}
+
 function IconChevron() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -131,11 +142,14 @@ const quickLinks = [
   { to: '/admin/classes',   label: 'Clases',      desc: 'Ver y cancelar clases',       Icon: IconClasesLink, color: '#0abfbf' },
   { to: '/admin/templates', label: 'Plantillas',  desc: 'Horarios y generar mes',      Icon: IconTemplate,   color: '#e8a020' },
   { to: '/admin/bonos',     label: 'Bonos',       desc: 'Bonos mensuales y renovaciones', Icon: IconBono,   color: '#2ecc8f' },
+  { to: '/admin/billing',   label: 'Facturación', desc: 'Ingresos mensuales y KPIs',   Icon: IconBilling,    color: '#4a9eff', generalAdminOnly: true },
 ]
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
+  const { profile } = useAuth()
   const today = todayStr()
+  const visibleLinks = quickLinks.filter((link) => !link.generalAdminOnly || profile?.role === 'general_admin')
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats', today],
@@ -256,7 +270,7 @@ export default function AdminDashboard() {
             background: 'var(--surface)', borderRadius: '18px',
             border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden',
           }}>
-            {quickLinks.map((link, i) => (
+            {visibleLinks.map((link, i) => (
               <button
                 key={link.to}
                 onClick={() => navigate(link.to)}
