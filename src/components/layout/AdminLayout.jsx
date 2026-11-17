@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 
 const tabs = [
   { to: '/admin', label: 'Dashboard', end: true },
@@ -6,9 +7,13 @@ const tabs = [
   { to: '/admin/classes', label: 'Clases' },
   { to: '/admin/templates', label: 'Plantillas' },
   { to: '/admin/bonos', label: 'Bonos' },
+  { to: '/admin/billing', label: 'Facturación', generalAdminOnly: true },
 ]
 
 export default function AdminLayout() {
+  const { profile } = useAuth()
+  const visibleTabs = tabs.filter((tab) => !tab.generalAdminOnly || profile?.role === 'general_admin')
+
   return (
     <div>
       <div style={{
@@ -17,7 +22,7 @@ export default function AdminLayout() {
         overflowX: 'auto', display: 'flex', gap: '6px',
         padding: '10px 16px', scrollbarWidth: 'none',
       }}>
-        {tabs.map((tab) => (
+        {visibleTabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
