@@ -1,10 +1,10 @@
 // Precio mensual de cada bono en euros, según su número de clases.
 // null = bono ilimitado. Si se añade un bono nuevo hay que darle precio aquí.
 export const BONO_PRICES = new Map([
-  [5, 40],
-  [10, 45],
-  [15, 50],
-  [null, 55],
+  [5, 35],
+  [10, 40],
+  [15, 45],
+  [null, 50],
 ])
 
 // Devuelve el precio de un bono o null si no tiene precio definido
